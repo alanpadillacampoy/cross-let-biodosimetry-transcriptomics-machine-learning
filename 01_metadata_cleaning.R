@@ -22,12 +22,12 @@ list_cell = c(6, 9, 15, 16, 18)
 for (i in 1:35){
   sum_exp <- get_DoReMiTra_data(list_se$Dataset[i])
   number_rows <- length(colnames(sum_exp))
-  metadata <- matrix(nrow = number_rows, ncol = 15)
+  metadata <- matrix(nrow = number_rows, ncol = 14)
   columns <- colData(sum_exp)
   colnames(metadata) <- c("dataset_name", "dataset_ID", "platform_ID", "sample_ID", 
                           "organism", "dose_Gy", "radiation_type", "sex", 
                           "time_hours", "tissue", "experimental_setting", 
-                          "dose_rate_photon", "dose_rate_neutron", "platform", "condition")
+                          "dose_rate_photon", "platform", "condition")
   metadata[,1] <- list_se$Dataset[i]
   metadata[,2] <- strsplit(metadata[,1], "_")[[1]][5]
   metadata[,3] <- strsplit(metadata[,1], "_")[[1]][6]
@@ -58,8 +58,8 @@ for (i in 1:35){
     metadata[, 10] <- ""
   }
   metadata[,11] <- str_to_lower(columns$Exp_setting)
-  metadata[,14] <- str_to_lower(columns$Platform)
-  metadata[,15] <- ifelse(metadata[,6] == 0, "control", "irradiated")
+  metadata[,13] <- str_to_lower(columns$Platform)
+  metadata[,14] <- ifelse(metadata[,6] == 0, "control", "irradiated")
   matrix_name <- paste0("metadata_", i)
   assign(matrix_name, metadata)
 }
@@ -77,12 +77,12 @@ se21$Dose<- ifelse(
   )
 )
 number_rows <- length(colnames(se21))
-metadata <- matrix(nrow = number_rows, ncol = 15)
+metadata <- matrix(nrow = number_rows, ncol = 14)
 columns <- colData(se21)
 colnames(metadata) <- c("dataset_name", "dataset_ID", "platform_ID", "sample_ID", 
                         "organism", "dose_Gy", "radiation_type", "sex", 
                         "time_hours", "tissue", "experimental_setting", 
-                        "dose_rate_photon", "dose_rate_neutron", "platform", "condition")
+                        "dose_rate_photon", "platform", "condition")
 metadata[,1] <- list_se$Dataset[21]
 metadata[,2] <- strsplit(metadata[,1], "_")[[1]][5]
 metadata[,3] <- strsplit(metadata[,1], "_")[[1]][6]
@@ -107,8 +107,8 @@ metadata[,9] <- ifelse(str_detect(columns$Time_point, "(?i)pre-irradiation"),
                                                      "[a-zA-Z/_-]")))))
 metadata[,10] <- columns$tissue.ch1
 metadata[,11] <- str_to_lower(columns$Exp_setting)
-metadata[,14] <- str_to_lower(columns$Platform)
-metadata[,15] <- ifelse(metadata[,6] == 0, "control", "irradiated")
+metadata[,13] <- str_to_lower(columns$Platform)
+metadata[,14] <- ifelse(metadata[,6] == 0, "control", "irradiated")
 metadata_21 <- metadata
 
 #adds the photon dose rate information extracted from the literature ----
@@ -137,8 +137,8 @@ metadata_20[,12] <- ifelse(metadata_20[,7] == "neutron",  0.0258, 0.006667)
 metadata_21[,12] <- ifelse(metadata_21[,7] == "neutron",  0.0258, 1.23)
 metadata_22[,12] <- NA
 metadata_23[,12] <- colData(get_DoReMiTra_data(list_se$Dataset[23]))$Dose_rate
-metadata_23[,12] <- ifelse(metadata_23[, 10] == "Acute", 1.03,
-                            ifelse(metadata_23[, 10] == "Low", 0.0031, 0))
+metadata_23[,12] <- ifelse(metadata_23[, 12] == "Acute", 1.03,
+                            ifelse(metadata_23[, 12] == "Low", 0.0031, 0))
 metadata_24[,12] <- NA
 metadata_25[,12] <- 0.1
 metadata_26[,12] <- 0.86
@@ -151,11 +151,6 @@ metadata_32[,12] <- 1.45
 metadata_33[,12] <- 0.85
 metadata_34[,12] <- 6
 metadata_35[,12] <- NA
-
-#adds the dose rate information for experiments with neutron radiation
-metadata_19[,13] <- 0.0258
-metadata_20[,13] <- 0.0258
-metadata_21[,13] <- 0.0258
 
 #this was extracted from the other parts of the metadata and are manually input
 metadata_10[,10] <- "Human Peripheral blood lymphocytes (PBL)"
@@ -182,12 +177,15 @@ full_metadata[,12] <- ifelse(full_metadata[,6] == 0, 0, full_metadata[,12])
 
 #corrects tissues types, and categorizes them into 4 groups
 full_metadata[,10] <- case_when(
-  str_detect(full_metadata[,10], "(?i)(h1f|hepm|hescs)") ~ "non blood cell lines",
-  str_detect(full_metadata[,10], "(?i)(cd4|cd8|nk|lymphocyte tcd4)") ~ "isolated lymphocytes",
-  str_detect(full_metadata[,10], "(?i)(pbmc|pbl|lymphocyte|leukocyte)") ~ "PBMCs PBLs",
-  str_detect(full_metadata[,10], "(?i)(whole blood|peripheral blood|^blood$)") ~ "whole blood",
+  str_detect(full_metadata[,10],
+             "(?i)(h1f|hepm|hescs)") ~ "non blood cell lines",
+  str_detect(full_metadata[,10],
+             "(?i)(cd4|cd8|nk|lymphocyte tcd4)") ~ "isolated lymphocytes",
+  str_detect(full_metadata[,10],
+             "(?i)(pbmc|pbl|lymphocyte|leukocyte)") ~ "PBMCs PBLs",
+  str_detect(full_metadata[,10], 
+             "(?i)(whole blood|peripheral blood|^blood$)") ~ "whole blood",
 )
 
 write.csv(full_metadata, 
-          file = "C:/Users/alanp/OneDrive/Documentos/DoReMiTra Scripts/full_metadata.csv", row.names = FALSE)
-# d ----
+          file = "full_metadata.csv", row.names = FALSE)

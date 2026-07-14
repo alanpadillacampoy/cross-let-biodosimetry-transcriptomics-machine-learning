@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+full_metadata.csv
+expr.csv
+expressionmatrix.csv
