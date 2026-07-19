@@ -11,8 +11,6 @@ library(biomaRt)
 library(GEOquery)
 
 list_se <- DoReMiTra::list_DoReMiTra_datasets()
-list_problems <- c(4, 5, 14, 20, 33)
-list_super_problems <- c(16, 18)
 
 #GPL6244 = SE 17 skip it
 #Replaces the names of the probes with the corresponding genes being tested.----
@@ -36,7 +34,7 @@ for (i in (1:35)[-17]){
  #PROBES may be in the ID column or in the NAME column
  #The symbol is always a combination of GENE SYMBOL so we search for SYMBOL
  gene_column <- colnames(gpl_table %>% dplyr::select(contains("symbol")))
- id_column <- ifelse(gpl_table[colnames(gpl_table)[1]][1,1] == 1, "NAME", "ID")
+ id_column <- ifelse(gpl_table[colnames(gpl_table)[1]][1,1] == 1, "SPOT_ID", "ID")
  
  #Annotates the probes with the corresponding genes
  annotated_probes <- SummarizedExperiment::merge(clean_probes,
@@ -55,11 +53,16 @@ for (i in (1:35)[-17]){
  expression_matrix_new <- expression_matrix_new %>%
    dplyr::relocate(all_of(gene_column), .before = 2)
 
- #Deletes all NAs or empty spaces in the Gene Symbol column to keep only named genes
+ #Deletes all NAs or empty spaces in the Gene Symbol column to keep only single 
+ #named genes
  rows_to_keep <- !is.na(expression_matrix_new[[gene_column]]) &
    expression_matrix_new[[gene_column]] != "" &
-   expression_matrix_new[[gene_column]] != "-"
+   expression_matrix_new[[gene_column]] != "-" &
+   !grepl("///", expression_matrix_new[[gene_column]])
  expression_matrix_new <- expression_matrix_new[rows_to_keep, ]
+ 
+ expression_matrix_new <- expression_matrix_new %>% dplyr::rename(Gene = all_of(gene_column))
+ expression_matrix_new <- expression_matrix_new %>% dplyr::arrange(Gene)
  
  #Assigns the subset number to the new expression matrix
  matrix_name <- paste0("expression_matrix_new_", i)
@@ -121,4 +124,3 @@ expr_annot <- data.frame(probe_id = probe_ids,
 # 
 # # Descending order (Z to A)
 # df_sorted <- df %>% arrange(desc(column_name))
-
