@@ -9,6 +9,8 @@ library(dplyr)
 library(BiocManager)
 library(biomaRt)
 library(GEOquery)
+library(tibble)
+library(WGCNA)
 
 list_se <- DoReMiTra::list_DoReMiTra_datasets()
 
@@ -29,6 +31,11 @@ for (i in 1:35){
   probes <- as.data.frame(SummarizedExperiment::rownames(expression_matrix))
   colnames(probes) <- "probes"
   clean_probes <- probes[!grepl("\\(", probes$probes), , drop = FALSE]
+  
+  #Extracts the row number of the expression matrix
+  rows <- nrow(expression_matrix)
+  rows_name <- paste0("rows_original_", i)
+  assign(rows_name, rows)
   
   #Deals with the different structure SE 17 has
   if (i == 17) {
@@ -110,7 +117,23 @@ for (i in 1:35){
   matrix_name <- paste0("expression_matrix_new_", i)
   assign(matrix_name, expression_matrix_new)
 }
-
+#Checks for LOG2 transform and if it isnt then transforms it
+for (i in 1:35) {
+  print(i)
+  a <- get(paste0("expression_matrix_new_", i))
+  maximum <- max(a[, 3:ncol(a)], na.rm = TRUE)
+  print(maximum)
+  if (maximum > 30){
+    b <- cbind(a[, 1:2], log2(a[, 3:ncol(a)] + 1))
+    maximum <- max(b[, 3:ncol(b)], na.rm = TRUE)
+    print(maximum)
+    #Assigns the subset number to the new expression matrix
+    matrix_name <- paste0("expression_matrix_new_", i)
+    print(matrix_name)
+    assign(matrix_name, b)
+  }
+}
+#TESTING
 for (i in 1:35){
   print(i)
   a <- get(paste0("expression_matrix_new_", i))
@@ -118,50 +141,39 @@ for (i in 1:35){
   print(head(a[,c(1,2,3)]))
 }
 
+#DELETE PROBES WITH 15% OR MORE NAs ----
 for (i in 1:35) {
-  # 1. Print header for the current matrix
-  cat("\n=========================================\n")
-  cat("  ANALYZING: expression_matrix_new_", i, "\n", sep = "")
-  cat("=========================================\n")
+  matrix <- get(paste0("expression_matrix_new_", i))
+  end_col <- ncol(matrix) - 3
+  matrix$NAs <- 
+    rowSums(is.na(matrix[,3:end_col])) / 
+    end_col * 100
+  matrix <- matrix %>%
+    dplyr::relocate(NAs, .before = 3)
+  matrix_cleaned <- subset.data.frame(matrix, NAs <= 15)
+  matrix_name <- paste0("expression_matrix_cleaned_", i)
+  assign(matrix_name, matrix_cleaned)
+}
+#TRACK CHANGES ----
+probe_tracker <- NULL  # Run this once before the loop starts
+for (i in 1:35) {
+  orig <- get(paste0("rows_original_", i))
+  n_new <- nrow(get(paste0("expression_matrix_new_", i)))
+  n_clean <- nrow(get(paste0("expression_matrix_cleaned_", i)))
   
-  # 2. Fetch the matrix dynamically
-  a <- get(paste0("expression_matrix_new_", i))
-  
-  # 3. Isolate the Gene column and drop any missing values (NAs)
-  gene_vector <- na.omit(a$Gene)
-  
-  # 4. Calculate the core metrics
-  total_genes  <- length(gene_vector)
-  unique_genes <- length(unique(gene_vector))
-  
-  # Prevent division by zero if a matrix happens to have an empty Gene column
-  if (total_genes > 0) {
-    pct_unique <- (unique_genes / total_genes) * 100
-  } else {
-    pct_unique <- 0
-  }
-  
-  # 5. Count how many times each unique gene appears
-  gene_counts <- table(gene_vector)
-  
-  # 6. Print the summary report
-  cat("Total Genes (Rows):       ", total_genes, "\n")
-  cat("Unique Genes:             ", unique_genes, "\n")
-  cat("Percentage of Unique Data:", round(pct_unique, 2), "%\n\n")
-  
-  # 7. Print the most frequent genes
-  cat("Top 6 most frequent genes:\n")
-  print(head(sort(gene_counts, decreasing = TRUE)))
-  
-  # 8. Your original preview of the data frame structure
-  cat("\nMatrix preview (First 3 columns):\n")
-  print(head(a[, c(1, 2, 3)]))
+  probe_tracker <- rbind(probe_tracker, as.data.frame(tibble::tibble(
+    dataset = i, original_probes = orig, cleaned_na_genes = n_new,
+    difference_1 = original_probes - cleaned_na_genes,
+    cleaned_15_percent = n_clean, difference_2 = cleaned_na_genes - cleaned_15_percent
+  )))
 }
 
-
-for (i in 1:35) {
-  print(i)
-  a <- get(paste0("expression_matrix_new_", i))
-  max <- max(a[,3:ncol(a)], na.rm = TRUE)
-  print(max)
-}
+#COLLAPSE PROBES THAT MAP THE SAME GENE INTO ONE BASED ON THE HIGHEST MEAN EXPRESSION ----
+collapsed_data <- WGCNA::collapseRows(datET = expression_matrix_cleaned_1[,4:ncol(expression_matrix_cleaned_1)],
+                                      rowGroup = expression_matrix_cleaned_1$Gene,
+                                      rowID = rownames(expression_matrix_cleaned_1),
+                                      method = "MaxMean")
+expression_matrix_final_1 <- as.data.frame(collapsed_data$datETcollapsed)
+expression_matrix_final_1$Gene <- rownames(expression_matrix_final_1)
+expression_matrix_final_1 <- expression_matrix_final_1 %>%
+  dplyr::relocate(Gene, .before = 1)

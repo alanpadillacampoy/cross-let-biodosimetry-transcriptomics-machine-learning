@@ -6,3 +6,6 @@ full_metadata.csv
 expr.csv
 expressionmatrix.csv
 *.csv
+~$_data_quality.docx
+*.docx
+02_data_quality.docx
