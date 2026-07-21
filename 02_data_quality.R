@@ -24,7 +24,7 @@ for (i in 1:35){
   platform <- strsplit(list_se$Dataset[i], "_")[[1]][6]
   gpl <- GEOquery::getGEO(platform)
   gpl_table <- GEOquery::Table(gpl)
-  
+    
   #Extracts the expression matrix from the data set
   se1 <- DoReMiTra::get_DoReMiTra_data(list_se$Dataset[i])
   expression_matrix <- as.data.frame(SummarizedExperiment::assay(se1, "exprs"))
@@ -83,7 +83,7 @@ for (i in 1:35){
   gene_column <- colnames(gpl_table %>% dplyr::select(contains("symbol")))
   id_column <- ifelse(gpl_table[colnames(gpl_table)[1]][1,1] == 1, "SPOT_ID", "ID")
   
-
+  
   #Annotates the probes with the corresponding genes
   annotated_probes <- SummarizedExperiment::merge(clean_probes,
                                                   gpl_table[, c(id_column, gene_column)],
@@ -169,11 +169,40 @@ for (i in 1:35) {
 }
 
 #COLLAPSE PROBES THAT MAP THE SAME GENE INTO ONE BASED ON THE HIGHEST MEAN EXPRESSION ----
-collapsed_data <- WGCNA::collapseRows(datET = expression_matrix_cleaned_1[,4:ncol(expression_matrix_cleaned_1)],
-                                      rowGroup = expression_matrix_cleaned_1$Gene,
-                                      rowID = rownames(expression_matrix_cleaned_1),
-                                      method = "MaxMean")
-expression_matrix_final_1 <- as.data.frame(collapsed_data$datETcollapsed)
-expression_matrix_final_1$Gene <- rownames(expression_matrix_final_1)
-expression_matrix_final_1 <- expression_matrix_final_1 %>%
-  dplyr::relocate(Gene, .before = 1)
+for (i in 1:35) {
+  print(i)
+  cleaned_matrix <- get(paste0("expression_matrix_cleaned_", 1))
+  collapsed_data <- WGCNA::collapseRows(datET = cleaned_matrix[,4:ncol(cleaned_matrix)],
+                                        rowGroup = cleaned_matrix$Gene,
+                                        rowID = rownames(cleaned_matrix),
+                                        method = "MaxMean")
+  expression_matrix_collapsed <- as.data.frame(collapsed_data$datETcollapsed)
+  #expression_matrix_collapsed$Gene <- rownames(expression_matrix_collapsed)
+  #expression_matrix_collapsed <- expression_matrix_collapsed %>%
+  #  dplyr::relocate(Gene, .before = 1)
+  matrix_name <- paste0("expression_matrix_collapsed_", i)
+  assign(matrix_name, expression_matrix_collapsed)
+}
+
+#Normalizes the data to Z score ----
+for (i in 1:35) {
+  print(i)
+  collapsed_matrix <- get(paste0("expression_matrix_collapsed_", i))
+  
+  #Replaces NAs for that row mean, effectively turning them to 0 when Z scoring
+  row_means <- rowMeans(collapsed_matrix, na.rm = TRUE)
+  na_indices <- which(is.na(collapsed_matrix), arr.ind = TRUE)
+  collapsed_matrix[na_indices] <- row_means[na_indices[, 1]]
+  
+  #Checks the variance across genes
+  gene_sds <- apply(collapsed_matrix, 1, sd)
+  mat_filtered <- collapsed_matrix[gene_sds > 0, ]
+  
+  #Z scoring
+  final_data <- scale(t(mat_filtered))
+  print(sum(colMeans(final_data)))
+  print(summary(apply(final_data, 2, sd)))
+  
+  matrix_name <- paste0("expression_matrix_final_", i)
+  assign(matrix_name, final_data)
+}

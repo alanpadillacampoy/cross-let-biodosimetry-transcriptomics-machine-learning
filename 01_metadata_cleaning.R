@@ -13,6 +13,9 @@ library(dplyr)
 #defines the Summarized-experiment ----
 list_se <- list_DoReMiTra_datasets()
 
+#these lists match the names of the specific type of tissue 
+#if the tissue col in the metadata is tissue.ch1 then its on list_tissue
+#if its in cell.type.ch1
 list_tissue = c(1, 2, 3, 4, 5, 7, 8, 11, 13, 17, 21, 22, 23, 25, 29, 30, 32,
                 33, 34, 35)
 list_cell = c(6, 9, 15, 16, 18)
