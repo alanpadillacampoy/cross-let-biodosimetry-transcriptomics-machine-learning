@@ -1,30 +1,41 @@
 ##This script is to check the quality of the genomic data in the SummarizedExps
 #libraries ----
 library(DoReMiTra)
-library(limma)
 library(SummarizedExperiment)
-library(readr)
 library(stringr)
 library(dplyr)
 library(BiocManager)
-library(biomaRt)
 library(GEOquery)
 library(tibble)
 library(WGCNA)
 
-list_se <- DoReMiTra::list_DoReMiTra_datasets()
+#Functions
+source("00_functions.R")
 
-#GPL6244 = SE 17 skip it
+#Analysis
+list_se <- DoReMiTra::get_all_DoReMiTra_datasets()
+list_se[["SE_Salah_2025_ExVivo"]] <- NULL
+
+#Extracts the platform from the data set, and launches a GEO query to get the
+#platform's metadata
+unique_platforms <- unique_gpl_platforms(list_se)
+
+geo_metadata <- GEO_query_list(unique_platforms)
+
+se <- get_expression_matrices(list_se)
+
+
+###for rows use nrow(se[[i]])
+
+#Standardizes the platform present in dataset 17
+system.time(
+  geo_metadata <- correct_seventeen(list_se, geo_metadata)
+)
+
+
 #Replaces the names of the probes with the corresponding genes being tested.----
-#Skips Data set 17 since platform GPL6244 cannot be generalized in the same way.
 for (i in 1:35){
-  print(i) 
-  #Extracts the platform from the data set, and launches a GEO query to get the
-  #platform's metadata
-  platform <- strsplit(list_se$Dataset[i], "_")[[1]][6]
-  gpl <- GEOquery::getGEO(platform)
-  gpl_table <- GEOquery::Table(gpl)
-    
+
   #Extracts the expression matrix from the data set
   se1 <- DoReMiTra::get_DoReMiTra_data(list_se$Dataset[i])
   expression_matrix <- as.data.frame(SummarizedExperiment::assay(se1, "exprs"))
@@ -32,11 +43,7 @@ for (i in 1:35){
   colnames(probes) <- "probes"
   clean_probes <- probes[!grepl("\\(", probes$probes), , drop = FALSE]
   
-  #Extracts the row number of the expression matrix
-  rows <- nrow(expression_matrix)
-  rows_name <- paste0("rows_original_", i)
-  assign(rows_name, rows)
-  
+
   #Deals with the different structure SE 17 has
   if (i == 17) {
     # 1. Split each row by the triple slashes '///' to isolate the sections
