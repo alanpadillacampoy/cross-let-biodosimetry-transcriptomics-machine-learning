@@ -15,7 +15,7 @@ library(WGCNA)
 
 #Extracts the platform from the data set and checks for uniqueness 
 unique_gpl_platforms <- function(list_se){
-  platforms <- vector("character", length = 35)
+  platforms <- vector("list", length = 35)
   for (i in 1:35) {
     platforms[i] <- strsplit(names(list_se)[i], "_")[[1]][6]
   }
@@ -47,22 +47,15 @@ get_expression_matrices <- function(list_se) {
 
 correct_seventeen <- function(list_se, geo_metadata) {
   
-  # 1. Extract the platform ID for dataset #17
   platform <- strsplit(names(list_se)[17], "_")[[1]][6]
   
-  # 2. Split each row by the triple slashes '///' to isolate the sections
   sections_list <- strsplit(geo_metadata[[platform]]$gene_assignment, "///", fixed = TRUE)
   
-  # 3. Extract targets and apply the uniqueness condition per row
   extracted_targets <- sapply(sections_list, function(row_sections) {
     
-    # Trim spaces from sections
     row_sections <- trimws(row_sections)
-    
-    # Split each individual section by the double slash '//'
     sub_pieces <- strsplit(row_sections, "//", fixed = TRUE)
     
-    # Grab the 2nd element (gene symbol) of each section
     targets <- sapply(sub_pieces, function(piece) {
       if (length(piece) >= 2) {
         return(trimws(piece[2]))
@@ -71,10 +64,7 @@ correct_seventeen <- function(list_se, geo_metadata) {
       }
     })
     
-    # Remove any NAs generated during extraction before checking uniqueness
     targets <- targets[!is.na(targets)]
-    
-    # Check uniqueness
     unique_targets <- unique(targets)
     
     if (length(unique_targets) == 1) {
@@ -83,10 +73,106 @@ correct_seventeen <- function(list_se, geo_metadata) {
       return(NA_character_)         
     }
   }, USE.NAMES = FALSE)
-  
-  # 4. Add the new column to the targeted platform data frame
+
   geo_metadata[[platform]]$GENE_SYMBOL <- extracted_targets
-  
-  # 5. CRITICAL: Return the modified list so changes persist outside the function!
   return(geo_metadata)
+}
+
+# join_probes <- function(se){
+#   lapply(se, function(df_expression){
+#     probes <- rownames(df_expression)
+#     data.frame(probes = probes, stringsAsFactors = FALSE)
+#   })
+# }
+
+
+#Selects the possible columns where the probes and symbols may be:
+find_gene_column <- function(geo_metadata){
+
+  #The symbol is always a combination of GENE SYMBOL so we search for SYMBOL
+  gene_column <- lapply(geo_metadata, function(gene_column){
+    colnames(gene_column %>% dplyr::select(contains("symbol")))
+  }) 
+  
+  return(gene_column)
+}  
+find_id_column <- function(geo_metadata){
+  
+  #PROBES may be in the ID column or in the NAME column  
+  id_column <- lapply(geo_metadata, function(id_column){
+    ifelse(id_column[colnames(id_column)[1]][1,1] == 1, "SPOT_ID", "ID")
+  }) 
+  
+  return(id_column)
+} 
+
+#Annotates the expression matrices with the genes, matching the probes and the genes they map for
+annotate_expression_by_rownames <- function(se, geo_metadata, id_column, gene_column) {
+  
+  res <- lapply(names(se), function(dataset_name) {
+    
+    # 1. Get expression matrix as data.frame
+    expr_df <- as.data.frame(se[[dataset_name]])
+    
+    # 2. Extract platform ID (e.g., "GPL11202")
+    platform <- strsplit(dataset_name, "_")[[1]][6]
+    platform_df <- geo_metadata[[platform]]
+    
+    # 3. Get target ID and Gene column names for this platform/dataset
+    current_id_col   <- as.character(id_column[[platform]])[1]
+    current_gene_col <- as.character(gene_column[[platform]])[1]
+    
+    # Fallback to numeric indexing if id/gene_column are indexed by position rather than platform string
+    if (is.na(current_id_col)) {
+      idx <- match(dataset_name, names(se))
+      current_id_col   <- as.character(id_column[[idx]])[1]
+      current_gene_col <- as.character(gene_column[[idx]])[1]
+    }
+    
+    # 4. Subset platform metadata to just the key ID and Gene columns
+    meta_subset <- platform_df[, c(current_id_col, current_gene_col), drop = FALSE]
+    
+    # 5. Merge expression matrix (by rownames) directly with platform metadata
+    merged_df <- merge(
+      x     = expr_df,
+      y     = meta_subset,
+      by.x  = "row.names",
+      by.y  = current_id_col,
+      all.x = TRUE
+    )
+    
+    # Clean up row.names column name
+    colnames(merged_df)[1] <- "probes"
+    
+    # 6. Relocate the gene symbol column directly to position #2
+    merged_df <- merged_df %>%
+      dplyr::relocate(dplyr::all_of(current_gene_col), .before = 2)
+    
+    #Renames the gene column to Gene
+    merged_df <- merged_df %>% 
+      dplyr::rename(gene = all_of(current_gene_col))
+    
+    return(merged_df)
+  })
+  
+  names(res) <- names(se)
+  return(res)
+}
+
+check_log2_transform <- function(annotated_expression_matrices) {
+  
+  res <- lapply(annotated_expression_matrices, function(expr_df) {
+    
+    # Calculate maximum value across sample columns (columns 3 onwards)
+    maximum <- max(expr_df[, 3:ncol(expr_df)], na.rm = TRUE)
+    
+    # Transform if raw intensities (> 30)
+    if (maximum > 30) {
+      expr_df[, 3:ncol(expr_df)] <- log2(expr_df[, 3:ncol(expr_df)] + 1)
+    }
+    
+    return(expr_df)
+  })
+  
+  return(res)
 }

@@ -1,3 +1,5 @@
+
+```{r}
 ##This script is to check the quality of the genomic data in the SummarizedExps
 #libraries ----
 library(DoReMiTra)
@@ -206,3 +208,13 @@ for (i in 1:35) {
   matrix_name <- paste0("expression_matrix_final_", i)
   assign(matrix_name, final_data)
 }
+```
+
+
+
+---
+title: 02_data_quality.R
+author: USUARIO
+date: '2026-07-23'
+
+---
