@@ -35,8 +35,22 @@ geo_metadata <- correct_seventeen(list_se, geo_metadata)
 gene_column <- find_gene_column(geo_metadata)
 id_column <- find_id_column(geo_metadata)
 
-
 annotated_expression_matrices <- 
   annotate_expression_by_rownames(se, geo_metadata, id_column, gene_column)
 
 log_checked_matrices <- check_log2_transform(annotated_expression_matrices)
+
+complete_matrices <- delete_NAs(annotated_expression_matrices)
+
+
+
+
+
+
+
+
+
+
+
+
+

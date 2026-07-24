@@ -1,7 +1,7 @@
 #This is the master function document. All functions are stored here for 
 #reference in the project
 
-#Libraries ----
+# Libraries ----
 library(DoReMiTra)
 library(SummarizedExperiment)
 library(stringr)
@@ -11,9 +11,9 @@ library(GEOquery)
 library(tibble)
 library(WGCNA)
 
-##Data cleaning, quality and validation ----
+# Data cleaning, quality and validation ----
 
-#Extracts the platform from the data set and checks for uniqueness 
+##Extracts the platform from the data set and checks for uniqueness ----
 unique_gpl_platforms <- function(list_se){
   platforms <- vector("list", length = 35)
   for (i in 1:35) {
@@ -24,7 +24,7 @@ unique_gpl_platforms <- function(list_se){
   return(unique_platforms)
 }
 
-#Launches a GEO query to obtain the platform's metadata
+## Launches a GEO query to obtain the platform's metadata ----
 GEO_query_list <- function(unique_platforms){
   
   platform_metadata <- vector("list", length = length(unique_platforms))
@@ -38,13 +38,14 @@ GEO_query_list <- function(unique_platforms){
   return(platform_metadata)
 }
 
-#Extracts the expression matrix form the SE
+## Extracts the expression matrix form the SE ----
 get_expression_matrices <- function(list_se) {
   lapply(list_se, function(se) {
     as.data.frame(SummarizedExperiment::assay(se))
   })
 }
 
+## Corrects the issue with the platform metadata in the dataset 17 ----
 correct_seventeen <- function(list_se, geo_metadata) {
   
   platform <- strsplit(names(list_se)[17], "_")[[1]][6]
@@ -77,16 +78,14 @@ correct_seventeen <- function(list_se, geo_metadata) {
   geo_metadata[[platform]]$GENE_SYMBOL <- extracted_targets
   return(geo_metadata)
 }
-
+######DELETE?????? ----
 # join_probes <- function(se){
 #   lapply(se, function(df_expression){
 #     probes <- rownames(df_expression)
 #     data.frame(probes = probes, stringsAsFactors = FALSE)
 #   })
 # }
-
-
-#Selects the possible columns where the probes and symbols may be:
+## Selects the possible columns where the probes and symbols may be: ----
 find_gene_column <- function(geo_metadata){
 
   #The symbol is always a combination of GENE SYMBOL so we search for SYMBOL
@@ -106,7 +105,8 @@ find_id_column <- function(geo_metadata){
   return(id_column)
 } 
 
-#Annotates the expression matrices with the genes, matching the probes and the genes they map for
+## Annotates the expression matrices with the genes, matching the probes ----
+#and the genes they map for
 annotate_expression_by_rownames <- function(se, geo_metadata, id_column, gene_column) {
   
   res <- lapply(names(se), function(dataset_name) {
@@ -176,3 +176,47 @@ check_log2_transform <- function(annotated_expression_matrices) {
   
   return(res)
 }
+
+## This function does two things, deletes all probes that don't map to one ----
+#single gene and deletes all probes missing in more than 15% of samples 
+delete_NAs <- function(annotated_expression_matrices){
+  
+  res <- lapply(names(annotated_expression_matrices), function(dataset_name) {
+    
+    expr_df <- as.data.frame(annotated_expression_matrices[[dataset_name]])
+    
+    #Deletes all NAs or empty spaces in the Gene column to keep only single named genes
+    rows_to_keep <- !is.na(expr_df$gene) &
+      expr_df$gene != "" &
+      expr_df$gene != "-" &
+      expr_df$gene != "---" &
+      !grepl("///", expr_df$gene)
+    
+    expr_df$keep <- rows_to_keep
+    expr_df <- subset(expr_df, keep == TRUE)
+    expr_df$keep <- NULL
+    
+    #Deletes the random errors present in samples. If more than 15% of samples 
+    #are missing a probe then the probe is deleted. 
+    
+    end_col <- ncol(expr_df) - 3
+    expr_df$NAs <- rowSums(is.na(expr_df[, 3:end_col])) / end_col * 100
+    expr_df <- subset(expr_df, NAs <= 15)
+    expr_df$NAs <- NULL
+    
+    #Alphabetizes the gene symbols
+    
+    expr_df <- expr_df %>% dplyr::arrange(gene)
+    
+    return(expr_df)
+
+  })
+  return(res)
+}
+
+## 
+
+
+
+
+# Metadata ----
