@@ -211,10 +211,28 @@ delete_NAs <- function(annotated_expression_matrices){
     return(expr_df)
 
   })
+  names(res) <- names(annotated_expression_matrices)
+  
   return(res)
 }
 
-## 
+## Collapses probes that map to the same genes based on the highest mean expression ----
+collapse_probes <- function(complete_matrices){
+  
+  res <- lapply(names(complete_matrices), function(dataset_name){
+    
+    expr_df <- as.data.frame(complete_matrices[[dataset_name]])
+    
+    collapsed_data <- WGCNA::collapseRows(datET = expr_df[, 3:ncol(expr_df)],
+                                          rowGroup = expr_df$gene,
+                                          rowID = rownames(expr_df),
+                                          method = "MaxMean")
+    expr_df <- as.data.frame(collapsed_data$datETcollapsed)
+    
+    return(expr_df)
+  })
+  return(res)
+}
 
 
 

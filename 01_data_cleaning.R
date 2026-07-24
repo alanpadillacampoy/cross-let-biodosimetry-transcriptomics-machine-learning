@@ -42,7 +42,7 @@ log_checked_matrices <- check_log2_transform(annotated_expression_matrices)
 
 complete_matrices <- delete_NAs(annotated_expression_matrices)
 
-
+test <- collapse_probes(complete_matrices)
 
 
 
