@@ -11,6 +11,10 @@ library(GEOquery)
 library(tibble)
 library(WGCNA)
 
+# Start data ----
+list_se <- DoReMiTra::get_all_DoReMiTra_datasets()
+list_se[["SE_Salah_2025_ExVivo"]] <- NULL
+
 # Data cleaning, quality and validation ----
 
 ##Extracts the platform from the data set and checks for uniqueness ----
@@ -216,24 +220,94 @@ delete_NAs <- function(annotated_expression_matrices){
   return(res)
 }
 
-## Collapses probes that map to the same genes based on the highest mean expression ----
+# Collapses probes that map to the same genes based on the highest mean expression ----
 collapse_probes <- function(complete_matrices){
-  
+
   res <- lapply(names(complete_matrices), function(dataset_name){
-    
+
     expr_df <- as.data.frame(complete_matrices[[dataset_name]])
-    
+
     collapsed_data <- WGCNA::collapseRows(datET = expr_df[, 3:ncol(expr_df)],
                                           rowGroup = expr_df$gene,
                                           rowID = rownames(expr_df),
                                           method = "MaxMean")
     expr_df <- as.data.frame(collapsed_data$datETcollapsed)
+
+    return(expr_df)
+  })
+  names(res) <- names(complete_matrices)
+
+  return(res)
+}
+## Collapses probes that map to the same genes based on the highest mean expression ----
+collapse_probes <- function(complete_matrices) {
+
+  dataset_names <- names(complete_matrices)
+  total_datasets <- length(dataset_names)
+
+  res <- lapply(seq_along(dataset_names), function(i) {
+    dataset_name <- dataset_names[i]
+
+    # Extract dataframe
+    expr_df <- as.data.frame(complete_matrices[[dataset_name]])
+
+    # 2. Extract expression matrix (ensure numeric matrix conversion)
+    expr_matrix <- as.matrix(expr_df[, 3:ncol(expr_df)])
+
+    # 3. Perform WGCNA probe collapsing
+    collapsed_data <- WGCNA::collapseRows(
+      datET    = expr_matrix,
+      rowGroup = expr_df$gene,
+      rowID    = rownames(expr_df),
+      method   = "MaxMean"
+    )
+
+    # Convert collapsed data back to data.frame
+    collapsed_df <- as.data.frame(collapsed_data$datETcollapsed)
+
+    return(collapsed_df)
+  })
+
+  # Preserve dataset names on the resulting list
+  names(res) <- dataset_names
+
+  return(res)
+}
+## Scales the data based on the Z score ----
+z_score_matrices <- function(collapsed_matrices){
+  res <- lapply(names(collapsed_matrices), function(dataset_name){
+    
+    expr_df <- as.data.frame(collapsed_matrices[[dataset_name]])
+    
+    #Replaces NAs for that row mean, effectively turning them to 0 when Z scoring
+    row_means <- rowMeans(expr_df, na.rm = TRUE)
+    na_indices <- which(is.na(expr_df), arr.ind = TRUE)
+    expr_df[na_indices] <- row_means[na_indices[, 1]]
+    
+    # Checks the variance across genes 
+    gene_sd <- apply(expr_df, 1, sd)
+    filtered_matrix <- expr_df[gene_sd > 0, ]
+    
+    # Z Scoring
+    expr_df <- scale(t(filtered_matrix))
     
     return(expr_df)
   })
+  
   return(res)
+
 }
 
+
+
+
+
+
+
+
+
+
+## Tracks changes ----
 
 
 
