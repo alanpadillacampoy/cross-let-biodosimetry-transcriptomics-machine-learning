@@ -10,11 +10,12 @@ library(BiocManager)
 library(GEOquery)
 library(tibble)
 library(WGCNA)
-
+library(purrr)
 # Start data ----
-list_se <- DoReMiTra::get_all_DoReMiTra_datasets()
-list_se[["SE_Salah_2025_ExVivo"]] <- NULL
-
+if (!exists("list_se")) {
+  list_se <- DoReMiTra::get_all_DoReMiTra_datasets()
+  list_se[["SE_Salah_2025_ExVivo"]] <- NULL
+}
 # Data cleaning, quality and validation ----
 
 ##Extracts the platform from the data set and checks for uniqueness ----
@@ -220,25 +221,6 @@ delete_NAs <- function(annotated_expression_matrices){
   return(res)
 }
 
-# Collapses probes that map to the same genes based on the highest mean expression ----
-collapse_probes <- function(complete_matrices){
-
-  res <- lapply(names(complete_matrices), function(dataset_name){
-
-    expr_df <- as.data.frame(complete_matrices[[dataset_name]])
-
-    collapsed_data <- WGCNA::collapseRows(datET = expr_df[, 3:ncol(expr_df)],
-                                          rowGroup = expr_df$gene,
-                                          rowID = rownames(expr_df),
-                                          method = "MaxMean")
-    expr_df <- as.data.frame(collapsed_data$datETcollapsed)
-
-    return(expr_df)
-  })
-  names(res) <- names(complete_matrices)
-
-  return(res)
-}
 ## Collapses probes that map to the same genes based on the highest mean expression ----
 collapse_probes <- function(complete_matrices) {
 
@@ -248,13 +230,10 @@ collapse_probes <- function(complete_matrices) {
   res <- lapply(seq_along(dataset_names), function(i) {
     dataset_name <- dataset_names[i]
 
-    # Extract dataframe
     expr_df <- as.data.frame(complete_matrices[[dataset_name]])
 
-    # 2. Extract expression matrix (ensure numeric matrix conversion)
     expr_matrix <- as.matrix(expr_df[, 3:ncol(expr_df)])
 
-    # 3. Perform WGCNA probe collapsing
     collapsed_data <- WGCNA::collapseRows(
       datET    = expr_matrix,
       rowGroup = expr_df$gene,
@@ -262,53 +241,66 @@ collapse_probes <- function(complete_matrices) {
       method   = "MaxMean"
     )
 
-    # Convert collapsed data back to data.frame
     collapsed_df <- as.data.frame(collapsed_data$datETcollapsed)
 
     return(collapsed_df)
   })
-
-  # Preserve dataset names on the resulting list
   names(res) <- dataset_names
 
   return(res)
 }
+
 ## Scales the data based on the Z score ----
 z_score_matrices <- function(collapsed_matrices){
   res <- lapply(names(collapsed_matrices), function(dataset_name){
     
     expr_df <- as.data.frame(collapsed_matrices[[dataset_name]])
+    expr_matrix <- as.matrix(expr_df)
     
     #Replaces NAs for that row mean, effectively turning them to 0 when Z scoring
-    row_means <- rowMeans(expr_df, na.rm = TRUE)
-    na_indices <- which(is.na(expr_df), arr.ind = TRUE)
-    expr_df[na_indices] <- row_means[na_indices[, 1]]
+    row_means <- rowMeans(expr_matrix, na.rm = TRUE)
+    na_indices <- which(is.na(expr_matrix), arr.ind = TRUE)
+    expr_matrix[na_indices] <- row_means[na_indices[, 1]]
     
     # Checks the variance across genes 
-    gene_sd <- apply(expr_df, 1, sd)
-    filtered_matrix <- expr_df[gene_sd > 0, ]
+    gene_sd <- apply(expr_matrix, 1, sd)
+    filtered_matrix <- expr_matrix[gene_sd > 0, ]
     
     # Z Scoring
-    expr_df <- scale(t(filtered_matrix))
+    expr_matrix <- scale(t(filtered_matrix))
     
-    return(expr_df)
+    final_df <- as.data.frame(expr_matrix)
+    
+    return(final_df)
   })
-  
+  names(res) <- names(collapsed_matrices)
   return(res)
 
 }
 
-
-
-
-
-
-
-
-
-
 ## Tracks changes ----
+track_changes <- function(se, complete_matrices, final_matrices) {
+  
+  # map_dfr binds the resulting rows into one single 35-row tibble
+  res <- purrr::map_dfr(names(se), function(dataset_name) {
+    tibble(
+      dataset         = dataset_name,
+      se_rows         = nrow(se[[dataset_name]]),
+      complete_rows   = nrow(complete_matrices[[dataset_name]]),
+      final_rows   = ncol(final_matrices[[dataset_name]]),
+      total_reduction = (se_rows - final_rows) / se_rows * 100
+    )
+  })
+  
+  return(res) 
+}
 
-
+## Cleans the environment
+clean_environment_1 <- function(){
+  rm(list = setdiff(ls(envir = .GlobalEnv), c("final_matrices", "list_se", 
+                                              "changes", "clean_environment_1")), 
+     envir = .GlobalEnv)
+  gc()
+}
 
 # Metadata ----

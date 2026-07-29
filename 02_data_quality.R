@@ -192,7 +192,9 @@ for (i in 1:35) {
   #Replaces NAs for that row mean, effectively turning them to 0 when Z scoring
   row_means <- rowMeans(collapsed_matrix, na.rm = TRUE)
   na_indices <- which(is.na(collapsed_matrix), arr.ind = TRUE)
-  collapsed_matrix[na_indices] <- row_means[na_indices[, 1]]
+  if (nrow(na_indices) > 0) {
+    collapsed_matrix[na_indices] <- row_means[na_indices[, 1]]
+  }
   
   #Checks the variance across genes
   gene_sds <- apply(collapsed_matrix, 1, sd)

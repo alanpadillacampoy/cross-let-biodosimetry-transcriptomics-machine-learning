@@ -9,3 +9,6 @@ expressionmatrix.csv
 ~$_data_quality.docx
 *.docx
 02_data_quality.docx
+*.rds
+*.RData
+*.rda
