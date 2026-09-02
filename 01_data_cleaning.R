@@ -38,17 +38,18 @@ complete_matrices <- delete_NAs(annotated_expression_matrices)
 
 collapsed_matrices <- collapse_probes(complete_matrices)
 
-final_matrices <- z_score_matrices(collapsed_matrices)
+scaled_matrices <- z_score_matrices(collapsed_matrices)
 
-changes <- track_changes(se, complete_matrices, final_matrices)
+final_matrices <- ortholog_correction(scaled_matrices, list_se)
+
+changes <- track_changes(se, complete_matrices, scaled_matrices, final_matrices)
 
 # This instruction deletes everything but the final matrices, ----
 # which will be used for further analysis. To review each of the individual steps 
 # comment the function
 
-clean_environment_1()
-
-saveRDS(final_matrices, file = "final_matrices.rds")
-saveRDS(list_se, file = "list_se.rds")
-saveRDS(changes, file = "changes_data_cleaning.rds")
-
+# clean_environment_1()
+# 
+# saveRDS(final_matrices, file = "final_matrices.rds")
+# saveRDS(list_se, file = "list_se.rds")
+# saveRDS(changes, file = "changes_data_cleaning.rds")

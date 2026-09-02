@@ -11,17 +11,21 @@ library(GEOquery)
 library(tibble)
 library(WGCNA)
 library(purrr)
+library(orthogene)
 # Start data ----
 if (!exists("list_se")) {
   list_se <- DoReMiTra::get_all_DoReMiTra_datasets()
+  #File is not published in the GEO
   list_se[["SE_Salah_2025_ExVivo"]] <- NULL
+  #File is full of outliers
+  list_se[["SE_Ankermit_2015_ExVivo_GSE55953_GPL14550"]] <- NULL
 }
 # Data cleaning, quality and validation ----
 
-##Extracts the platform from the data set and checks for uniqueness ----
+## Extracts the platform from the data set and checks for uniqueness ----
 unique_gpl_platforms <- function(list_se){
-  platforms <- vector("list", length = 35)
-  for (i in 1:35) {
+  platforms <- vector("list", length = length(list_se))
+  for (i in 1:length(list_se)) {
     platforms[i] <- strsplit(names(list_se)[i], "_")[[1]][6]
   }
   unique_platforms <- unique(platforms)
@@ -267,7 +271,7 @@ z_score_matrices <- function(collapsed_matrices){
     filtered_matrix <- expr_matrix[gene_sd > 0, ]
     
     # Z Scoring
-    expr_matrix <- scale(t(filtered_matrix))
+    expr_matrix <- scale(filtered_matrix)
     
     final_df <- as.data.frame(expr_matrix)
     
@@ -278,8 +282,41 @@ z_score_matrices <- function(collapsed_matrices){
 
 }
 
+## Maps the orthologs: matching all genes to their corresponding human genes ----
+ortholog_correction <- function(scaled_matrices, list_se){
+  
+  res <- lapply(names(scaled_matrices), function(dataset_names){
+    
+    expr_df <- as.data.frame(scaled_matrices[[dataset_names]])
+    
+    species <- unique(list_se[[dataset_names]]$Organism)
+  
+    if (species == "Mus musculus") {
+      original_species = "mmusculus"
+    } else if (species == "Macaca mulatta") {
+      original_species = "mmulatta"
+    } else {original_species = "hsapiens"}
+    
+    if (original_species != "hsapiens") {
+      newgenes <- orthogene::convert_orthologs(expr_df, "rownames", "rownames", 
+                                               FALSE, original_species, "hsapiens", 
+                                               non121_strategy = "drop_both_species")
+      newgenes$time <- NULL
+    } else {
+      newgenes <- expr_df
+    }
+    
+    return(newgenes)
+  })
+  
+  names(res) <- names(scaled_matrices)
+  
+  return(res)
+}
+
+
 ## Tracks changes ----
-track_changes <- function(se, complete_matrices, final_matrices) {
+track_changes <- function(se, complete_matrices, scaled_matrices, final_matrices) {
   
   # map_dfr binds the resulting rows into one single 35-row tibble
   res <- purrr::map_dfr(names(se), function(dataset_name) {
@@ -287,7 +324,8 @@ track_changes <- function(se, complete_matrices, final_matrices) {
       dataset         = dataset_name,
       se_rows         = nrow(se[[dataset_name]]),
       complete_rows   = nrow(complete_matrices[[dataset_name]]),
-      final_rows   = ncol(final_matrices[[dataset_name]]),
+      scaled_rows     = nrow(scaled_matrices[[dataset_name]]),
+      final_rows   = nrow(final_matrices[[dataset_name]]),
       total_reduction = (se_rows - final_rows) / se_rows * 100
     )
   })
@@ -295,7 +333,7 @@ track_changes <- function(se, complete_matrices, final_matrices) {
   return(res) 
 }
 
-## Cleans the environment
+## Cleans the environment ----
 clean_environment_1 <- function(){
   rm(list = setdiff(ls(envir = .GlobalEnv), c("final_matrices", "list_se", 
                                               "changes", "clean_environment_1")), 
