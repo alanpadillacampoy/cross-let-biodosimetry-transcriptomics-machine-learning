@@ -6,6 +6,10 @@ wang_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", "Igf
 #Wang data
 
 
-
+wang_training_data <- read.csv("wang_training_dataset.csv")
+wang_training_data[[,]] <- as.numeric(wang_training_data[[,]])
+wang_training_data <- as.data.frame(t(wang_training_data))
+colnames(wang_training_data) <- wang_training_data[1,]
+wang_training_data <- wang_training_data[-1,]
 #Linear Regression Model
 linear_model <- lm()
