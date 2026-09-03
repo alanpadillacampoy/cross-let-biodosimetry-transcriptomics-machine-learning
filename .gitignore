@@ -12,3 +12,4 @@ expressionmatrix.csv
 *.rds
 *.RData
 *.rda
+*.xlsx
