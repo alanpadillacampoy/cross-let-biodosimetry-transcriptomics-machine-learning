@@ -5,6 +5,7 @@ library(ranger)
 library(glmnet)
 library(catboost)
 library(rsample)
+library(purrr)
 
 list_se <- readRDS("list_se.rds")
 final_matrices <- readRDS("final_matrices.rds")
@@ -85,53 +86,134 @@ wang_training_data_augmented$Target <- NULL
 
 augmented_set <- rbind(wang_training_data_augmented, wang_training_data)
 rownames(augmented_set) <- NULL
+augmented_set$Sample_id <- seq_len(nrow(augmented_set))
+augmented_set <- augmented_set %>% relocate(Sample_id, 1)
+
+# Cross Validation
+
+cross_validation <- rsample::vfold_cv(augmented_set, v = 5, repeats = 10)
+
+predictions <- lapply(cross_validation$splits, function(splits){
+  testing_folds <- rsample::assessment(splits)
+  training_folds <- rsample::training(splits)
+  
+  # Simple Linear model
+  linear_model <- lm(Dose ~ . - Sample_id, data = training_folds)
+
+  # Polynomial Linear Model
+  wang_poly <- training_folds %>% 
+    dplyr::mutate(across(3:last_col(), ~ .x^2))
+  polynomial_model <- lm(Dose ~ . - Sample_id, data = wang_poly)
+  
+  # Square Root Linear Model
+  wang_root <- training_folds %>% 
+    dplyr::mutate(across(3:last_col(), ~ sqrt(.x)))
+  square_root_model <- lm(Dose ~. - Sample_id, data = wang_root)
+  
+  # Random Forest Regression
+  random_forest_model <- ranger::ranger(
+    Dose ~ . - Sample_id,
+    data = training_folds,
+    num.trees = 60,
+    seed = 42,
+    max.depth = 2,
+    splitrule = "variance"
+  )
+  
+  # ElasticNet Regression Model
+  elastic_model <- glmnet::glmnet(
+    x = as.matrix(training_folds[, 3:ncol(training_folds)]),
+    y = training_folds$Dose,
+    alpha = 0.5,
+    lambda = 1.0,
+    standardize = FALSE,
+    thresh = 0.0002,
+    seed = 42
+  )
+  
+  # Create the data frame MOVE THIS TO THE END
+  matrix_general <- data.frame(
+    Sample_id = testing_folds$Sample_id,
+    Dose = testing_folds$Dose,
+    Linear = predict(linear_model, newdata = testing_folds),
+    Polynomial = predict(polynomial_model, newdata = testing_folds),
+    SquareRoot = predict(square_root_model, newdata = testing_folds),
+    RandomForest = predict(random_forest_model, 
+                           data = testing_folds)$predictions,
+    ElasticNet = 
+      as.numeric(glmnet::predict.glmnet(elastic_model,
+                                        newx = as.matrix(testing_folds[, 3:ncol(testing_folds)])))
+    )
+  
+  catboost_matrix <- data.frame(
+    Sample_id = training_folds$Sample_id,
+    Dose = training_folds$Dose,
+    Linear = predict(linear_model, newdata = training_folds),
+    Polynomial = predict(polynomial_model, newdata = training_folds),
+    SquareRoot = predict(square_root_model, newdata = training_folds),
+    RandomForest = predict(random_forest_model, 
+                           data = training_folds)$predictions,
+    ElasticNet = 
+      as.numeric(glmnet::predict.glmnet(elastic_model,
+                                        newx = as.matrix(training_folds[, 3:ncol(training_folds)])))
+  )
+  
+  #Meta-model: CatBoost Regression Model
+  catboost_model <- catboost::catboost.train(
+    learn_pool = catboost::catboost.load_pool(
+      data = as.matrix(catboost_matrix[, 3:7]),
+      label = catboost_matrix$Dose
+    ),
+    params = list(
+      loss_function = "RMSE",
+      depth = 2,
+      iterations = 50,
+      learning_rate = 0.08,
+      l2_leaf_reg = 4.5,
+      subsample = 0.75,
+      random_seed = 42
+    )
+  )
+  
+  #predict testing_folds with the base trained on training_folds
+  #predict testing_folds with the catboost trained on training_folds
+
+})
 
 
+################################################################################
+################################################################################
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Overall
-
-predictions <- tibble::tibble(Dose = wang_testing_data$Dose, 
-                              Linear = predict(linear_model, newdata = wang_testing_data),
-                              RandomForest = predict(random_forest_model, 
-                                                     data = wang_testing_data)$predictions,
-                              Polynomial = predict(polynomial_model, newdata = wang_testing_data),
-                              SquareRoot = predict(square_root_model, newdata = wang_testing_data),
-                              ElasticNet = 
-                                as.numeric(glmnet::predict.glmnet(elastic_model,
-                                                       newx = as.matrix(wang_testing_data[, 2:ncol(wang_testing_data)])))
-                              )
-predictions
-
-# Augmentation
-
-
+final_predictions_matrix <- predictions %>% purrr::list_rbind() %>%
+  dplyr::arrange(Sample_id) %>%
+  tibble::remove_rownames() %>%
+  dplyr::group_by(Sample_id) %>%
+  dplyr::summarise(across(everything(), mean)) %>%
+  dplyr::ungroup()
 
 
 
 # Meta-model: CatBoost Regression
 
-#dese_pool <- catboost::catboost.load_pool()
-#meta_model <- catboost::catboost.train(predictions, )
+catboost_model <- catboost::catboost.train(
+  learn_pool = catboost::catboost.load_pool(
+    data = as.matrix(final_predictions_matrix[, 3:7]),
+    label = final_predictions_matrix$Dose
+  ),
+  params = list(
+    loss_function = "RMSE",
+    depth = 2,
+    iterations = 50,
+    learning_rate = 0.08,
+    l2_leaf_reg = 4.5,
+    subsample = 0.75,
+    random_seed = 42
+  )
+)
+catboost_predictions <- catboost.predict(
+  catboost_model,
+  catboost.load_pool(
+    data = as.matrix(final_predictions_matrix[, 3:7])
+  )
+)
+final_predictions_matrix$CatBoost <- catboost_predictions
