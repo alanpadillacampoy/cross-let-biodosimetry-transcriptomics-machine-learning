@@ -4,6 +4,7 @@ library(tibble)
 library(ranger)
 library(glmnet)
 library(catboost)
+library(rsample)
 
 list_se <- readRDS("list_se.rds")
 final_matrices <- readRDS("final_matrices.rds")
@@ -14,7 +15,7 @@ wang_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", "Igf
 set.seed(42)
 
 # Read Wang Training Data
-wang_training_data <- read.csv("wang_training_dataset.csv")
+wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
 wang_training_data <- as.data.frame(t(wang_training_data))
 colnames(wang_training_data) <- wang_training_data[1,]
 wang_training_data <- wang_training_data[-1,]
@@ -80,9 +81,10 @@ wang_training_data_augmented <- wang_training_data %>%
   dplyr::mutate(across(-Dose, ~ .x + runif(n = 1, min = -0.1, max = 0.1)*sd(.x))) %>%
   dplyr::ungroup()
 
-augmented_set <- rbind(wang_training_data_augmented, wang_training_data)
-augmented_set$Target <- NULL
+wang_training_data_augmented$Target <- NULL
 
+augmented_set <- rbind(wang_training_data_augmented, wang_training_data)
+rownames(augmented_set) <- NULL
 
 
 
