@@ -13,8 +13,7 @@ library(WGCNA)
 source("00_functions.R")
 
 #Analysis ----
-list_se <- DoReMiTra::get_all_DoReMiTra_datasets()
-list_se[["SE_Salah_2025_ExVivo"]] <- NULL
+
 
 #Extracts the platform from the data set, and launches a GEO query to get the
 #platform's metadata
@@ -22,21 +21,35 @@ unique_platforms <- unique_gpl_platforms(list_se)
 
 geo_metadata <- GEO_query_list(unique_platforms)
 
-se <- get_expression_matrices(list_se)
-
-
-###for rows use nrow(se[[i]])
-
 #Standardizes the platform present in dataset 17
 geo_metadata <- correct_seventeen(list_se, geo_metadata)
 
-# probe_list <- join_probes(se)
+se <- get_expression_matrices(list_se)
 
 gene_column <- find_gene_column(geo_metadata)
 id_column <- find_id_column(geo_metadata)
-
 
 annotated_expression_matrices <- 
   annotate_expression_by_rownames(se, geo_metadata, id_column, gene_column)
 
 log_checked_matrices <- check_log2_transform(annotated_expression_matrices)
+
+complete_matrices <- delete_NAs(annotated_expression_matrices)
+
+collapsed_matrices <- collapse_probes(complete_matrices)
+
+scaled_matrices <- z_score_matrices(collapsed_matrices)
+
+final_matrices <- ortholog_correction(scaled_matrices, list_se)
+
+changes <- track_changes(se, complete_matrices, scaled_matrices, final_matrices)
+
+# This instruction deletes everything but the final matrices, ----
+# which will be used for further analysis. To review each of the individual steps 
+# comment the function
+
+# clean_environment_1()
+# 
+# saveRDS(final_matrices, file = "final_matrices.rds")
+# saveRDS(list_se, file = "list_se.rds")
+# saveRDS(changes, file = "changes_data_cleaning.rds")

@@ -171,7 +171,7 @@ for (i in 1:35) {
 #COLLAPSE PROBES THAT MAP THE SAME GENE INTO ONE BASED ON THE HIGHEST MEAN EXPRESSION ----
 for (i in 1:35) {
   print(i)
-  cleaned_matrix <- get(paste0("expression_matrix_cleaned_", 1))
+  cleaned_matrix <- get(paste0("expression_matrix_cleaned_", i))
   collapsed_data <- WGCNA::collapseRows(datET = cleaned_matrix[,4:ncol(cleaned_matrix)],
                                         rowGroup = cleaned_matrix$Gene,
                                         rowID = rownames(cleaned_matrix),
@@ -192,7 +192,9 @@ for (i in 1:35) {
   #Replaces NAs for that row mean, effectively turning them to 0 when Z scoring
   row_means <- rowMeans(collapsed_matrix, na.rm = TRUE)
   na_indices <- which(is.na(collapsed_matrix), arr.ind = TRUE)
-  collapsed_matrix[na_indices] <- row_means[na_indices[, 1]]
+  if (nrow(na_indices) > 0) {
+    collapsed_matrix[na_indices] <- row_means[na_indices[, 1]]
+  }
   
   #Checks the variance across genes
   gene_sds <- apply(collapsed_matrix, 1, sd)

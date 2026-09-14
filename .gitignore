@@ -9,4 +9,12 @@ expressionmatrix.csv
 ~$_data_quality.docx
 *.docx
 02_data_quality.docx
+<<<<<<< HEAD
 02_data_quality.spin.Rmd
+=======
+*.rds
+*.RData
+*.rda
+*.xlsx
+*.docx
+>>>>>>> 9bec131d25ebef696e625701aa3fc63d6ec94caa
