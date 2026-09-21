@@ -48,8 +48,8 @@ changes <- track_changes(se, complete_matrices, scaled_matrices, final_matrices)
 # which will be used for further analysis. To review each of the individual steps 
 # comment the function
 
-# clean_environment_1()
-# 
-# saveRDS(final_matrices, file = "final_matrices.rds")
-# saveRDS(list_se, file = "list_se.rds")
-# saveRDS(changes, file = "changes_data_cleaning.rds")
+clean_environment_1()
+ 
+saveRDS(final_matrices, file = "final_matrices.rds")
+saveRDS(list_se, file = "list_se.rds")
+saveRDS(changes, file = "changes_data_cleaning.rds")

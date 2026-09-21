@@ -12,14 +12,16 @@ library(tibble)
 library(WGCNA)
 library(purrr)
 library(orthogene)
+
 # Start data ----
 if (!exists("list_se")) {
   list_se <- DoReMiTra::get_all_DoReMiTra_datasets()
-  #File is not published in the GEO
+  # This file is deleted due to not having a published entry in the GEO
   list_se[["SE_Salah_2025_ExVivo"]] <- NULL
-  #File is full of outliers
+  # This file is deleted due to outliers
   list_se[["SE_Ankermit_2015_ExVivo_GSE55953_GPL14550"]] <- NULL
 }
+
 # Data cleaning, quality and validation ----
 
 ## Extracts the platform from the data set and checks for uniqueness ----
@@ -342,3 +344,4 @@ clean_environment_1 <- function(){
 }
 
 # Metadata ----
+
