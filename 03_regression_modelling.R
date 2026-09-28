@@ -7,33 +7,44 @@ library(catboost)
 library(rsample)
 library(purrr)
 
-list_se <- readRDS("list_se.rds")
-final_matrices <- readRDS("final_matrices.rds")
-changes <- readRDS("changes_data_cleaning.rds")
+#list_se <- readRDS("list_se.rds")
+#final_matrices <- readRDS("final_matrices.rds")
+#changes <- readRDS("changes_data_cleaning.rds")
 
 wang_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", "Igfbp4", "LOC118567921",
-                          "Lrrc70", "Ms4a1", "Phlda3", "Ptprn", "Rps20", "Serpine2", "Thy1")
+                          "Lrrc70", "Ms4a1", "Phlda3", "Ptprn", "Rps20", "Serpine2", "Thy1", "Actb")
 set.seed(42)
 
-# Read Wang Training Data
+## Read Wang Training Data ----
 wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
 wang_training_data <- as.data.frame(t(wang_training_data))
 colnames(wang_training_data) <- wang_training_data[1,]
 wang_training_data <- wang_training_data[-1,]
 wang_training_data <- type.convert(wang_training_data, as.is = TRUE)
 
-# Read Wang Test Data
+## Read Wang Test Data ----
 wang_testing_data <- read.csv("wang_testing_dataset.csv", header = FALSE)
 wang_testing_data <- as.data.frame(t(wang_testing_data))
 colnames(wang_testing_data) <- wang_testing_data[1,]
 wang_testing_data <- wang_testing_data[-1,]
 wang_testing_data <- type.convert(wang_testing_data, as.is = TRUE)
 
-# Gene Selection
+## Gene Selection ----
 wang_training_data <- wang_training_data %>% dplyr::select(c("Dose", all_of(wang_signature_genes)))
 wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(wang_signature_genes)))
 
-# Data augmentation
+## Normalization (invert comments for unnormalized data) ----
+wang_training_data <- wang_training_data %>% 
+  dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
+  select(-Actb)
+wang_testing_data <- wang_testing_data %>% 
+  dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
+  select(-Actb)
+
+# wang_training_data <- wang_training_data %>% select(-Actb)
+# wang_testing_data <- wang_testing_data %>% select(-Actb)
+
+## Data augmentation ----
 
 wang_training_data_augmented <- wang_training_data %>%
   mutate(Target = case_when(
