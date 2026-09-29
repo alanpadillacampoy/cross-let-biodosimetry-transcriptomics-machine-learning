@@ -13,7 +13,8 @@ library(purrr)
 
 wang_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", "Igfbp4", "LOC118567921",
                           "Lrrc70", "Ms4a1", "Phlda3", "Ptprn", "Rps20", "Serpine2", "Thy1", "Actb")
-set.seed(42)
+seed <- 83
+set.seed(seed)
 
 ## Read Wang Training Data ----
 wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
@@ -34,15 +35,15 @@ wang_training_data <- wang_training_data %>% dplyr::select(c("Dose", all_of(wang
 wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(wang_signature_genes)))
 
 ## Normalization (invert comments for unnormalized data) ----
-wang_training_data <- wang_training_data %>% 
-  dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
-  select(-Actb)
-wang_testing_data <- wang_testing_data %>% 
-  dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
-  select(-Actb)
+# wang_training_data <- wang_training_data %>%
+#   dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
+#   select(-Actb)
+# wang_testing_data <- wang_testing_data %>%
+#   dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
+#   select(-Actb)
 
-# wang_training_data <- wang_training_data %>% select(-Actb)
-# wang_testing_data <- wang_testing_data %>% select(-Actb)
+wang_training_data <- wang_training_data %>% select(-Actb)
+wang_testing_data <- wang_testing_data %>% select(-Actb)
 
 ## Data augmentation ----
 
@@ -106,7 +107,7 @@ predictions <- lapply(seq_along(cross_validation$splits), function(i) {
     Dose ~ . - Sample_id,
     data = training_folds,
     num.trees = 60,
-    seed = 42,
+    seed = seed,
     max.depth = 2,
     splitrule = "variance"
   )
@@ -150,7 +151,7 @@ predictions <- lapply(seq_along(cross_validation$splits), function(i) {
       learning_rate = 0.08,
       l2_leaf_reg = 4.5,
       subsample = 0.75,
-      random_state = 42
+      random_state = seed
     )
   )
   
@@ -264,7 +265,7 @@ random_forest_model <- ranger::ranger(
   Dose ~ . -Sample_id,
   data = augmented_set,
   num.trees = 60,
-  seed = 42,
+  seed = seed,
   max.depth = 2,
   splitrule = "variance"
 )
@@ -303,7 +304,7 @@ final_catboost_model <- catboost::catboost.train(
     learning_rate = 0.08,
     l2_leaf_reg = 4.5,
     subsample = 0.75,
-    random_state = 42
+    random_state = seed
   )
 )
 
@@ -366,5 +367,6 @@ comparison_table <- data.frame(
   Metric = c("RMSE", "MAE", "R-Squared", "MRE", "REmax"),
   My_Model = c(my_RMSE, my_MAE, my_RSquared, my_MRE, my_REmax),
   Original_Model = c(wang_RMSE, wang_MAE, wang_RSquared, wang_MRE, wang_REmax))
+cat("Seed: ",seed)
 print(comparison_table, row.names = FALSE)
 
