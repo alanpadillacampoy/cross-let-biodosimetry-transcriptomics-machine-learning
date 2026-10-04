@@ -4,7 +4,6 @@
 
 #libraries ----
 library(DoReMiTra)
-library(limma)
 library(SummarizedExperiment)
 library(readr)
 library(stringr)
