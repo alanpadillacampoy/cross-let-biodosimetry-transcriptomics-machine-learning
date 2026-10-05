@@ -12,15 +12,34 @@ final_matrices <- readRDS("final_matrices.rds")
 changes <- readRDS("changes_data_cleaning.rds")
 
 wang_murine_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", 
-                          "Igfbp4", "LOC118567921","Lrrc70", "Ms4a1", "Phlda3", 
-                          "Ptprn", "Rps20", "Serpine2", "Thy1", "Actb")
+                                 "Igfbp4", "LOC118567921", "Lrrc70", "Ms4a1", "Phlda3", 
+                                 "Ptprn", "Rps20", "Serpine2", "Thy1", "Actb")
+
+wang_human_signature_genes <- c("CCNG1", "DGKA", "FZR1", "H4C3", "H4C9", "IFIT1", 
+                                 "IGFBP4", "LOC118567921", "LRRC70", "MS4A1", "PHLDA3", 
+                                 "PTPRN", "RPS20", "SERPINE2", "THY1", "ACTB")
+
 li_human_signature_genes <- c("CDKN1A", "BAX", "MDM2", "XPC", "PCNA", "FDXR", 
-                              "GDF-15", "DDB2", "TNFRSF10B", "PHPT1", "ASTN2", 
+                              "GDF15", "DDB2", "TNFRSF10B", "PHPT1", "ASTN2", 
                               "RPS27L", "BBC3", "TNFSF4", "POLH", "CCNG1", 
                               "PPM1D", "GADD45A", "ZMAT3", "SESN1", "AEN", 
                               "TRIAP1")
 zhao_human_signature_genes <- c("DDB2", "CD8A", "TALDO1", "PCNA", "EIF4G2", 
                                 "LCN2", "CDKN1A", "PRKCH", "ENO1", "PPM1D")
+FDXR_human <- "FDXR"
+DDB2_human <- "DDB2"
+GADD45A_human <- "GADD45A"
+
+human_signature_list <- list(
+  wang_human = wang_human_signature_genes,
+  li_human   = li_human_signature_genes,
+  zhao_human = zhao_human_signature_genes,
+  FDXR_human = FDXR_human,
+  DDB2_human = DDB2_human,
+  GADD45A_human = GADD45A_human
+)
+gene_space <- reduce(human_signature_list, union)
+
 
 ## Read Wang Training Data ----
 wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)

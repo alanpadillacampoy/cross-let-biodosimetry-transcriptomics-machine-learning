@@ -2,16 +2,17 @@
 #reference in the project
 
 # Libraries ----
-library(DoReMiTra)
-library(SummarizedExperiment)
-library(stringr)
-library(dplyr)
-library(BiocManager)
-library(GEOquery)
-library(tibble)
-library(WGCNA)
-library(purrr)
-library(orthogene)
+# List of unique required packages
+packages <- c(
+  "DoReMiTra", "SummarizedExperiment", "stringr", "dplyr", 
+  "BiocManager", "GEOquery", "tibble", "WGCNA", "purrr", 
+  "orthogene", "randomForest", "ranger", "glmnet", "catboost", "rsample"
+)
+
+# Load all packages silently
+suppressPackageStartupMessages({
+  lapply(packages, library, character.only = TRUE)
+})
 
 # Start data ----
 if (!exists("list_se")) {
