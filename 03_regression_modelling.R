@@ -7,13 +7,16 @@ library(catboost)
 library(rsample)
 library(purrr)
 
-list_se <- readRDS("list_se.rds")
-final_matrices <- readRDS("final_matrices.rds")
-changes <- readRDS("changes_data_cleaning.rds")
+#list_se <- readRDS("list_se.rds")
+#final_matrices <- readRDS("final_matrices.rds")
+#changes <- readRDS("changes_data_cleaning.rds")
 
 wang_murine_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", 
                                  "Igfbp4", "LOC118567921", "Lrrc70", "Ms4a1", "Phlda3", 
                                  "Ptprn", "Rps20", "Serpine2", "Thy1")
+#without the "problem" genes    
+wang_reduced_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "Ifit1", "Igfbp4",
+                                 "Ms4a1", "Phlda3", "Ptprn", "Rps20", "Serpine2", "Thy1")
 
 wang_human_signature_genes <- c("CCNG1", "DGKA", "FZR1", "H4C3", "H4C9", "IFIT1", 
                                  "IGFBP4", "LOC118567921", "LRRC70", "MS4A1", "PHLDA3", 
@@ -40,7 +43,8 @@ human_signature_list <- list(
 )
 gene_space <- reduce(human_signature_list, union)
 
-
+signature <- wang_reduced_signature_genes
+size_signature <- length(signature)
 ## Read Wang Training Data ----
 wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
 wang_training_data <- as.data.frame(t(wang_training_data))
@@ -56,8 +60,8 @@ wang_testing_data <- wang_testing_data[-1,]
 wang_testing_data <- type.convert(wang_testing_data, as.is = TRUE)
 
 ## Gene Selection ----
-wang_training_data <- wang_training_data %>% dplyr::select(c("Dose", all_of(wang_murine_signature_genes)))
-wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(wang_murine_signature_genes)))
+wang_training_data <- wang_training_data %>% dplyr::select(c("Dose", all_of(signature)))
+wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(signature)))
 
 ## Normalization (invert comments for unnormalized data) ----
 # wang_training_data <- wang_training_data %>%
@@ -67,8 +71,8 @@ wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(wang_m
 #   dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
 #   select(-Actb)
 
-wang_training_data <- wang_training_data %>% select(-Actb)
-wang_testing_data <- wang_testing_data %>% select(-Actb)
+#wang_training_data <- wang_training_data %>% select(-Actb)
+#wang_testing_data <- wang_testing_data %>% select(-Actb)
 
 seeds <- c(42, 96, 23, 14, 97, 56, 78, 12, 62, 83)
 
@@ -249,7 +253,7 @@ for (i in seq_along(seeds)) {
     dplyr::arrange(Sample_id) %>%
     tibble::remove_rownames() %>%
     dplyr::group_by(Sample_id) %>%
-    dplyr::summarise(across(everything(), mean)) %>%
+    dplyr::summarise(across(everything(), base::mean)) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(across(everything(), ~ ifelse(. > 0, ., 0)))
   
@@ -396,9 +400,18 @@ for (i in seq_along(seeds)) {
   
   # Comparison Table
   comparison_table <- data.frame(
-    Metric = c("RMSE", "MAE", "R-Squared", "MRE", "REmax"),
+    Metric = c("RMSE", "MAE", "R2", "MRE", "REmax"),
     My_Model = c(my_RMSE, my_MAE, my_RSquared, my_MRE, my_REmax),
     Original_Model = c(wang_RMSE, wang_MAE, wang_RSquared, wang_MRE, wang_REmax))
   
   comparison_list[[i]] <- comparison_table
 }
+
+model_performance <- cbind(
+  comparison_list[[1]],
+  lapply(comparison_list[-1], `[[`, 2) %>% 
+    as.data.frame()
+  )
+model_performance <- model_performance %>% relocate(Original_Model, .before = 2) %>%
+  rename(seed_42 = My_Model)
+
