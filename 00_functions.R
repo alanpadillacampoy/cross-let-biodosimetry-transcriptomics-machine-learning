@@ -285,37 +285,37 @@ z_score_matrices <- function(collapsed_matrices){
 
 }
 
-## Maps the orthologs: matching all genes to their corresponding human genes ----
-ortholog_correction <- function(scaled_matrices, list_se){
-  
-  res <- lapply(names(scaled_matrices), function(dataset_names){
-    
-    expr_df <- as.data.frame(scaled_matrices[[dataset_names]])
-    
-    species <- unique(list_se[[dataset_names]]$Organism)
-  
-    if (species == "Mus musculus") {
-      original_species = "mmusculus"
-    } else if (species == "Macaca mulatta") {
-      original_species = "mmulatta"
-    } else {original_species = "hsapiens"}
-    
-    if (original_species != "hsapiens") {
-      newgenes <- orthogene::convert_orthologs(expr_df, "rownames", "rownames", 
-                                               FALSE, original_species, "hsapiens", 
-                                               non121_strategy = "drop_both_species")
-      newgenes$time <- NULL
-    } else {
-      newgenes <- expr_df
-    }
-    
-    return(newgenes)
-  })
-  
-  names(res) <- names(scaled_matrices)
-  
-  return(res)
-}
+# ## Maps the orthologs: matching all genes to their corresponding human genes ----
+# ortholog_correction <- function(scaled_matrices, list_se){
+#   
+#   res <- lapply(names(scaled_matrices), function(dataset_names){
+#     
+#     expr_df <- as.data.frame(scaled_matrices[[dataset_names]])
+#     
+#     species <- unique(list_se[[dataset_names]]$Organism)
+#   
+#     if (species == "Mus musculus") {
+#       original_species = "mmusculus"
+#     } else if (species == "Macaca mulatta") {
+#       original_species = "mmulatta"
+#     } else {original_species = "hsapiens"}
+#     
+#     if (original_species != "hsapiens") {
+#       newgenes <- orthogene::convert_orthologs(expr_df, "rownames", "rownames", 
+#                                                FALSE, original_species, "hsapiens", 
+#                                                non121_strategy = "drop_both_species")
+#       newgenes$time <- NULL
+#     } else {
+#       newgenes <- expr_df
+#     }
+#     
+#     return(newgenes)
+#   })
+#   
+#   names(res) <- names(scaled_matrices)
+#   
+#   return(res)
+# }
 
 
 ## Tracks changes ----

@@ -9,7 +9,6 @@ homo_sapiens_datasets <- c(
   "SE_Amundson_2011_ExVivo_GSE23515_GPL6480",
   "SE_Amundson_2011_InVivo_GSE20162_GPL6480",
   "SE_Ankermit_2015_ExVivo_GSE55953_GPL14550",
-  "SE_Broustas_2017_ExVivo_GSE90909_GPL13497",
   "SE_Flores_2009_ExVivo_GSE15341_GPL8332",
   "SE_Ghandhi_2015_ExVivo_GSE65292_GPL13497",
   "SE_Girardi_2012_ExVivo_GSE20173_GPL6480",
@@ -37,8 +36,6 @@ mus_musculus_datasets <- c(
   "SE_Amundson_2019_InVivo_GSE124612_GPL11202",
   "SE_Aryankalayil_2018_InVivo_GSE104121_GPL10787",
   "SE_Aryankalayil_2018_InVivo_GSE104121_GPL21163",
-  "SE_Broustas_2017_InVivo_GSE85323_GPL10333",
-  "SE_Broustas_2018_InVivo_GSE113509_GPL11202",
   "SE_Broustas_2021_InVivo_GSE132559_GPL11202",
   "SE_Broustas_2021_InVivo_GSE133451_GPL11202",
   "SE_Broustas_2022_InVivo_GSE184361_GPL11202",
@@ -52,14 +49,15 @@ neutron_datasets <- c("SE_Broustas_2017_ExVivo_GSE90909_GPL13497",
                       "SE_Broustas_2017_InVivo_GSE85323_GPL10333",
                       "SE_Broustas_2018_InVivo_GSE113509_GPL11202")
 
-photon_datasets <- dplyr::symdiff(full_metadata$dataset_name, neutron_datasets)
-
 
 for (i in 1:length(mus_musculus_datasets)){
   print(unique(colData(list_se[[mus_musculus_datasets[1]]])$Organism))
 }
 
-x <- t(final_matrices[[homo_sapiens_datasets[1]]])
-colnames(select(as.data.frame(x), any_of(gene_space)))
-
+lapply(mus_musculus_datasets, function(dataset){
+  a <- final_matrices[[dataset]]
+  x <- as.data.frame(t(a))
+  genes_in_x <- colnames(select(x, any_of(wang_murine_signature_genes)))
+  genes_not_in_signature <- symdiff(genes_in_x, wang_murine_signature_genes)
+})
 

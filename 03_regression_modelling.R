@@ -13,7 +13,7 @@ changes <- readRDS("changes_data_cleaning.rds")
 
 wang_murine_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", 
                                  "Igfbp4", "LOC118567921", "Lrrc70", "Ms4a1", "Phlda3", 
-                                 "Ptprn", "Rps20", "Serpine2", "Thy1", "Actb")
+                                 "Ptprn", "Rps20", "Serpine2", "Thy1")
 
 wang_human_signature_genes <- c("CCNG1", "DGKA", "FZR1", "H4C3", "H4C9", "IFIT1", 
                                  "IGFBP4", "LOC118567921", "LRRC70", "MS4A1", "PHLDA3", 
