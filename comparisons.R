@@ -7,13 +7,17 @@ reduced_signature_performance <- read.csv("reduced_signature_performance.csv")
 
 # Paired t-tests ----
 # RMSE
-t.test(unlist(normal_signature_performance[1,3:12]), 
+rmse_ttest <- t.test(unlist(normal_signature_performance[1,3:12]), 
        unlist(reduced_signature_performance[1,3:12]), paired = TRUE)
-t.test(normal_signature_performance_summary$MAE[2:11], 
-       actb_normalized$MAE[2:11], paired = TRUE)
-t.test(normal_signature_performance_summary$RSquared[2:11], 
-       actb_normalized$RSquared[2:11], paired = TRUE)
-t.test(normal_signature_performance_summary$MRE[2:11], 
-       actb_normalized$MRE[2:11], paired = TRUE)
-t.test(normal_signature_performance_summary$REmax[2:11], 
-       actb_normalized$REmax[2:11], paired = TRUE)
+# MAE
+mae_ttest <- t.test(unlist(normal_signature_performance[2,3:12]), 
+                     unlist(reduced_signature_performance[2,3:12]), paired = TRUE)
+# R2
+r2_ttest <- t.test(unlist(normal_signature_performance[3,3:12]), 
+                     unlist(reduced_signature_performance[3,3:12]), paired = TRUE)
+# MRE
+mre_ttest <- t.test(unlist(normal_signature_performance[4,3:12]), 
+                     unlist(reduced_signature_performance[4,3:12]), paired = TRUE)
+# REmax
+remax_ttest <- t.test(unlist(normal_signature_performance[5,3:12]), 
+                     unlist(reduced_signature_performance[5,3:12]), paired = TRUE)

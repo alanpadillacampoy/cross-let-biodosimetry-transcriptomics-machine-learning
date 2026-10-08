@@ -43,7 +43,7 @@ human_signature_list <- list(
 )
 gene_space <- reduce(human_signature_list, union)
 
-signature <- wang_reduced_signature_genes
+signature <- wang_murine_signature_genes
 size_signature <- length(signature)
 ## Read Wang Training Data ----
 wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
@@ -74,7 +74,7 @@ wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(signat
 #wang_training_data <- wang_training_data %>% select(-Actb)
 #wang_testing_data <- wang_testing_data %>% select(-Actb)
 
-seeds <- c(42, 96, 23, 14, 97, 56, 78, 12, 62, 83)
+seeds <- 1:100
 
 comparison_list <- vector("list", length(seeds))
 names(comparison_list) <- paste0("seed_", seeds)
@@ -413,5 +413,5 @@ model_performance <- cbind(
     as.data.frame()
   )
 model_performance <- model_performance %>% relocate(Original_Model, .before = 2) %>%
-  rename(seed_42 = My_Model)
+  rename(seed_1 = My_Model)
 
