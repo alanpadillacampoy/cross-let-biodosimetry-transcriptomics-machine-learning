@@ -13,7 +13,7 @@ library(purrr)
 
 wang_murine_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", 
                                  "Igfbp4", "LOC118567921", "Lrrc70", "Ms4a1", "Phlda3", 
-                                 "Ptprn", "Rps20", "Serpine2", "Thy1")
+                                 "Ptprn", "Rps20", "Serpine2", "Thy1", "Actb")
 #without the "problem" genes    
 wang_reduced_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "Ifit1", "Igfbp4",
                                  "Ms4a1", "Phlda3", "Ptprn", "Rps20", "Serpine2", "Thy1")
@@ -64,12 +64,12 @@ wang_training_data <- wang_training_data %>% dplyr::select(c("Dose", all_of(sign
 wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(signature)))
 
 ## Normalization (invert comments for unnormalized data) ----
-# wang_training_data <- wang_training_data %>%
-#   dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
-#   select(-Actb)
-# wang_testing_data <- wang_testing_data %>%
-#   dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
-#   select(-Actb)
+wang_training_data <- wang_training_data %>%
+  dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
+  select(-Actb)
+wang_testing_data <- wang_testing_data %>%
+  dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
+  select(-Actb)
 
 #wang_training_data <- wang_training_data %>% select(-Actb)
 #wang_testing_data <- wang_testing_data %>% select(-Actb)
