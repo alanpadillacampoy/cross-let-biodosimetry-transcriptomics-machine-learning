@@ -14,7 +14,6 @@ source("00_functions.R")
 
 #Analysis ----
 
-
 #Extracts the platform from the data set, and launches a GEO query to get the
 #platform's metadata
 unique_platforms <- unique_gpl_platforms(list_se)
@@ -34,22 +33,22 @@ annotated_expression_matrices <-
 
 log_checked_matrices <- check_log2_transform(annotated_expression_matrices)
 
-complete_matrices <- delete_NAs(annotated_expression_matrices)
+complete_matrices <- delete_NAs(log_checked_matrices)
 
 collapsed_matrices <- collapse_probes(complete_matrices)
 
-scaled_matrices <- z_score_matrices(collapsed_matrices)
+#scaled_matrices <- z_score_matrices(collapsed_matrices)
 
 #final_matrices <- ortholog_correction(scaled_matrices, list_se)
-final_matrices <- scaled_matrices
+final_matrices <- collapsed_matrices
 
-changes <- track_changes(se, complete_matrices, scaled_matrices, final_matrices)
+#changes <- track_changes(se, complete_matrices, scaled_matrices, final_matrices)
 
 # This instruction deletes everything but the final matrices, ----
 # which will be used for further analysis. To review each of the individual steps 
 # comment the function
-clean_environment_1()
+#clean_environment_1()
  
-saveRDS(final_matrices, file = "final_matrices.rds")
-saveRDS(list_se, file = "list_se.rds")
-saveRDS(changes, file = "changes_data_cleaning.rds")
+#saveRDS(final_matrices, file = "final_matrices.rds")
+#saveRDS(list_se, file = "list_se.rds")
+#saveRDS(changes, file = "changes_data_cleaning.rds")

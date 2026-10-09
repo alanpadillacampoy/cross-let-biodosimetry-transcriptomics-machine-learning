@@ -1,6 +1,6 @@
 wang_murine_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", 
                                  "Igfbp4", "LOC118567921", "Lrrc70", "Ms4a1", "Phlda3", 
-                                 "Ptprn", "Rps20", "Serpine2", "Thy1")
+                                 "Ptprn", "Rps20", "Serpine2", "Thy1", "Actb")
 
 wang_human_signature_genes <- c("CCNG1", "DGKA", "FZR1", "H4C3", "H4C9", "IFIT1", 
                                 "IGFBP4", "LOC118567921", "LRRC70", "MS4A1", "PHLDA3", 
@@ -27,7 +27,7 @@ human_signature_list <- list(
 )
 gene_space <- reduce(human_signature_list, union)
 
-full_metadata <- read.csv("full_metadata.csv")
+  full_metadata <- read.csv("full_metadata.csv")
 
 full_metadata %>% group_by(organism) %>%
   count(dataset_name) %>%

@@ -7,20 +7,20 @@ library(catboost)
 library(rsample)
 library(purrr)
 
-#list_se <- readRDS("list_se.rds")
-#final_matrices <- readRDS("final_matrices.rds")
-#changes <- readRDS("changes_data_cleaning.rds")
+# list_se <- readRDS("list_se.rds")
+# final_matrices <- readRDS("final_matrices.rds")
+# changes <- readRDS("changes_data_cleaning.rds")
 
 wang_murine_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", 
                                  "Igfbp4", "LOC118567921", "Lrrc70", "Ms4a1", "Phlda3", 
                                  "Ptprn", "Rps20", "Serpine2", "Thy1", "Actb")
 #without the "problem" genes    
 wang_reduced_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "Ifit1", "Igfbp4",
-                                 "Ms4a1", "Phlda3", "Ptprn", "Rps20", "Serpine2", "Thy1")
+                                  "Ms4a1", "Phlda3", "Ptprn", "Rps20", "Serpine2", "Thy1")
 
 wang_human_signature_genes <- c("CCNG1", "DGKA", "FZR1", "H4C3", "H4C9", "IFIT1", 
-                                 "IGFBP4", "LOC118567921", "LRRC70", "MS4A1", "PHLDA3", 
-                                 "PTPRN", "RPS20", "SERPINE2", "THY1", "ACTB")
+                                "IGFBP4", "LOC118567921", "LRRC70", "MS4A1", "PHLDA3", 
+                                "PTPRN", "RPS20", "SERPINE2", "THY1", "ACTB")
 
 li_human_signature_genes <- c("CDKN1A", "BAX", "MDM2", "XPC", "PCNA", "FDXR", 
                               "GDF15", "DDB2", "TNFRSF10B", "PHPT1", "ASTN2", 
@@ -43,8 +43,16 @@ human_signature_list <- list(
 )
 gene_space <- reduce(human_signature_list, union)
 
-signature <- wang_murine_signature_genes
+signature <- wang_reduced_signature_genes
 size_signature <- length(signature)
+
+## Data for the real testing ----
+outside_set <- as.data.frame(t(final_matrices[[mus_musculus_datasets[3]]]))
+outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
+outside_set <- outside_set %>% 
+  dplyr::select(c("Dose", all_of(signature))) %>%
+  dplyr::relocate(Dose, .before = 1)
+
 ## Read Wang Training Data ----
 wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
 wang_training_data <- as.data.frame(t(wang_training_data))
@@ -52,29 +60,29 @@ colnames(wang_training_data) <- wang_training_data[1,]
 wang_training_data <- wang_training_data[-1,]
 wang_training_data <- type.convert(wang_training_data, as.is = TRUE)
 
-## Read Wang Test Data ----
-wang_testing_data <- read.csv("wang_testing_dataset.csv", header = FALSE)
-wang_testing_data <- as.data.frame(t(wang_testing_data))
-colnames(wang_testing_data) <- wang_testing_data[1,]
-wang_testing_data <- wang_testing_data[-1,]
-wang_testing_data <- type.convert(wang_testing_data, as.is = TRUE)
+# ## Read Wang Test Data ----
+# wang_testing_data <- read.csv("wang_testing_dataset.csv", header = FALSE)
+# wang_testing_data <- as.data.frame(t(wang_testing_data))
+# colnames(wang_testing_data) <- wang_testing_data[1,]
+# wang_testing_data <- wang_testing_data[-1,]
+# wang_testing_data <- type.convert(wang_testing_data, as.is = TRUE)
 
 ## Gene Selection ----
 wang_training_data <- wang_training_data %>% dplyr::select(c("Dose", all_of(signature)))
-wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(signature)))
+# wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(signature)))
 
 ## Normalization (invert comments for unnormalized data) ----
-wang_training_data <- wang_training_data %>%
-  dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
-  select(-Actb)
-wang_testing_data <- wang_testing_data %>%
-  dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
-  select(-Actb)
+# wang_training_data <- wang_training_data %>%
+#   dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
+#   select(-Actb)
+# wang_testing_data <- wang_testing_data %>%
+#   dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
+#   select(-Actb)
+# 
+# wang_training_data <- wang_training_data %>% select(-Actb)
+# wang_testing_data <- wang_testing_data %>% select(-Actb)
 
-#wang_training_data <- wang_training_data %>% select(-Actb)
-#wang_testing_data <- wang_testing_data %>% select(-Actb)
-
-seeds <- 1
+seeds <- 1:100
 
 comparison_list <- vector("list", length(seeds))
 names(comparison_list) <- paste0("seed_", seeds)
@@ -105,9 +113,10 @@ for (i in seq_along(seeds)) {
   # Add a sample id as a tracker
   augmented_set$Sample_id <- seq_len(nrow(augmented_set))
   augmented_set <- augmented_set %>% relocate(Sample_id, 1)
-  wang_testing_data$Sample_id <- seq_len(nrow(wang_testing_data))
-  wang_testing_data <- wang_testing_data %>% relocate(Sample_id, 1)
-  
+  # wang_testing_data$Sample_id <- seq_len(nrow(wang_testing_data))
+  # wang_testing_data <- wang_testing_data %>% relocate(Sample_id, 1)
+  outside_set$Sample_id <- seq_len(nrow(outside_set))
+  outside_set <- outside_set %>% relocate(Sample_id, 1)
   # Cross Validation
   
   cross_validation <- rsample::vfold_cv(augmented_set, v = 5, repeats = 10)
@@ -345,22 +354,22 @@ for (i in seq_along(seeds)) {
   )
   
   # Linear model transformations
-  testing_poly <- wang_testing_data %>% 
+  testing_poly <- outside_set %>% 
     dplyr::mutate(across(3:last_col(), ~ .x^2))
-  testing_root <- wang_testing_data %>% 
+  testing_root <- outside_set %>% 
     dplyr::mutate(across(3:last_col(), ~ sqrt(.x)))
   
   # Predicting the testing data
   testing_matrix <- data.frame(
-    Dose = wang_testing_data$Dose,
-    Linear = predict(linear_model, newdata = wang_testing_data),
+    Dose = outside_set$Dose,
+    Linear = predict(linear_model, newdata = outside_set),
     Polynomial = predict(polynomial_model, newdata = testing_poly),
     SquareRoot = predict(square_root_model, newdata = testing_root),
     RandomForest = predict(random_forest_model, 
-                           data = wang_testing_data)$predictions,
+                           data = outside_set)$predictions,
     ElasticNet = 
       as.numeric(glmnet::predict.glmnet(elastic_model,
-                                        newx = as.matrix(wang_testing_data[, 3:ncol(wang_testing_data)])))
+                                        newx = as.matrix(outside_set[, 3:ncol(outside_set)])))
   )
   print(testing_matrix)
   testing_matrix <- testing_matrix %>% 
@@ -411,7 +420,7 @@ model_performance <- cbind(
   comparison_list[[1]],
   lapply(comparison_list[-1], `[[`, 2) %>% 
     as.data.frame()
-  )
+)
 model_performance <- model_performance %>% relocate(Original_Model, .before = 2) %>%
   rename(seed_1 = My_Model)
 
