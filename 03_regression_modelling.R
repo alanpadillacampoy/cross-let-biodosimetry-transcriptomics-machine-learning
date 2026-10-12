@@ -27,11 +27,24 @@ li_human_signature_genes <- c("CDKN1A", "BAX", "MDM2", "XPC", "PCNA", "FDXR",
                               "RPS27L", "BBC3", "TNFSF4", "POLH", "CCNG1", 
                               "PPM1D", "GADD45A", "ZMAT3", "SESN1", "AEN", 
                               "TRIAP1")
+
+li_murine_signature_genes <- c("Cdkn1a", "Bax", "Mdm2", "Xpc", "Pcna", "Fdxr", 
+                              "Gdf15", "Ddb2", "Tnfrsf10b", "Phpt1", "Astn2", 
+                              "Rps27l", "Bbc3", "Tnfsf4", "Polh", "Ccng1", 
+                              "Ppm1d", "Gadd45a", "Zmat3", "Sesn1", "Aen", 
+                              "Triap1")
+
 zhao_human_signature_genes <- c("DDB2", "CD8A", "TALDO1", "PCNA", "EIF4G2", 
                                 "LCN2", "CDKN1A", "PRKCH", "ENO1", "PPM1D")
+
+zhao_murine_signature_genes <- c("Ddb2", "Cd8a", "Taldo1", "Pcna", "Eif4g2", 
+                                "Lcn2", "Cdkn1a", "Prkch", "Eno1", "Ppm1d")
+
 FDXR_human <- "FDXR"
 DDB2_human <- "DDB2"
+DDB2_murine <- "Ddb2"
 GADD45A_human <- "GADD45A"
+GADD45A_murine <- "Gadd45a"
 
 human_signature_list <- list(
   wang_human = wang_human_signature_genes,
