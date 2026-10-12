@@ -21,6 +21,10 @@ if (!exists("list_se")) {
   list_se[["SE_Salah_2025_ExVivo"]] <- NULL
   # This file is deleted due to outliers
   list_se[["SE_Ankermit_2015_ExVivo_GSE55953_GPL14550"]] <- NULL
+  # These files are deleted due to them being not human or mouse
+  list_se[["SE_Ghandhi_2018_InVivo_GSE84898_GPL13497"]] <- NULL
+  list_se[["SE_Park_2017_ExVivo_GSE102971_GPL10332_MacacaMulatta"]] <- NULL
+    
 }
 
 # Data cleaning, quality and validation ----
@@ -57,10 +61,10 @@ get_expression_matrices <- function(list_se) {
   })
 }
 
-## Corrects the issue with the platform metadata in the dataset 17 ----
-correct_seventeen <- function(list_se, geo_metadata) {
+## Corrects the issue with the platform metadata in the dataset GSE64375 ----
+correct_GSE64375 <- function(list_se, geo_metadata) {
   
-  platform <- strsplit(names(list_se)[17], "_")[[1]][6]
+  platform <- strsplit(names(list_se)["SE_Rouchka_2015_ExVivo_GSE64375_GPL6244"], "_")[[1]][6]
   
   sections_list <- strsplit(geo_metadata[[platform]]$gene_assignment, "///", fixed = TRUE)
   

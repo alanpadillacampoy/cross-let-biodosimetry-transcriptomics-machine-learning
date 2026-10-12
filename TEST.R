@@ -1,10 +1,10 @@
 wang_murine_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", 
                                  "Igfbp4", "LOC118567921", "Lrrc70", "Ms4a1", "Phlda3", 
-                                 "Ptprn", "Rps20", "Serpine2", "Thy1", "Actb")
+                                 "Ptprn", "Rps20", "Serpine2", "Thy1")
 
 wang_human_signature_genes <- c("CCNG1", "DGKA", "FZR1", "H4C3", "H4C9", "IFIT1", 
                                 "IGFBP4", "LOC118567921", "LRRC70", "MS4A1", "PHLDA3", 
-                                "PTPRN", "RPS20", "SERPINE2", "THY1", "ACTB")
+                                "PTPRN", "RPS20", "SERPINE2", "THY1")
 
 li_human_signature_genes <- c("CDKN1A", "BAX", "MDM2", "XPC", "PCNA", "FDXR", 
                               "GDF15", "DDB2", "TNFRSF10B", "PHPT1", "ASTN2", 
@@ -54,11 +54,6 @@ homo_sapiens_datasets <- c(
   "SE_Vasilyev_2017_ExVivo_GSE97000_GPL17077"
 )
 
-macaca_mulatta_datasets <- c(
-  "SE_Ghandhi_2018_InVivo_GSE84898_GPL13497",
-  "SE_Park_2017_ExVivo_GSE102971_GPL10332_MacacaMulatta"
-)
-
 mus_musculus_datasets <- c(
   "SE_Amundson_2018_InVivo_GSE101402_GPL11202",
   "SE_Amundson_2018_InVivo_GSE99176_GPL11202",
@@ -74,8 +69,8 @@ mus_musculus_datasets <- c(
   "SE_Yamaguchi_2020_InVivo_GSE137192_GPL1261"
 )
 
-neutron_datasets <- c("SE_Broustas_2017_ExVivo_GSE90909_GPL13497",
-                      "SE_Broustas_2017_InVivo_GSE85323_GPL10333",
+neutron_human_datasets <- "SE_Broustas_2017_ExVivo_GSE90909_GPL13497"
+neutron_mouse_datasets <- c("SE_Broustas_2017_InVivo_GSE85323_GPL10333",
                       "SE_Broustas_2018_InVivo_GSE113509_GPL11202")
 
 
@@ -90,3 +85,25 @@ lapply(mus_musculus_datasets, function(dataset){
   genes_not_in_signature <- symdiff(genes_in_x, wang_murine_signature_genes)
 })
 
+available_datasets <- final_matrices %>% imap_dfr(~tibble (
+  dataset = strsplit(.y, "_")[[1]][5],
+  species = ifelse(.y %in% mus_musculus_datasets | .y %in% neutron_mouse_datasets, "Mouse", "Human"),
+  wang_signature = ifelse(species == "Mouse", 
+                length(intersect(rownames(.x), wang_mouse_reduced_signature_genes)) == length(wang_mouse_reduced_signature_genes),
+                length(intersect(rownames(.x), wang_human_reduced_signature_genes)) == length(wang_human_reduced_signature_genes)),
+  li_signature = ifelse(species == "Mouse", 
+                          length(intersect(rownames(.x), li_mouse_signature_genes)) == length(li_mouse_signature_genes),
+                          length(intersect(rownames(.x), li_human_signature_genes)) == length(li_human_signature_genes)),
+  zhao_signature = ifelse(species == "Mouse", 
+                          length(intersect(rownames(.x), zhao_mouse_signature_genes)) == length(zhao_mouse_signature_genes),
+                          length(intersect(rownames(.x), zhao_human_signature_genes)) == length(zhao_human_signature_genes)),
+  FDXR = ifelse(species == "Mouse", 
+                length(intersect(rownames(.x), FDXR_mouse)) == length(FDXR_mouse),
+                length(intersect(rownames(.x), FDXR_human)) == length(FDXR_human)),
+  DDB2 = ifelse(species == "Mouse", 
+                length(intersect(rownames(.x), DDB2_mouse)) == length(DDB2_mouse),
+                length(intersect(rownames(.x), DDB2_human)) == length(DDB2_human)),
+  GADD45A = ifelse(species == "Mouse", 
+                length(intersect(rownames(.x), GADD45A_mouse)) == length(GADD45A_mouse),
+                length(intersect(rownames(.x), GADD45A_human)) == length(GADD45A_human)),
+), .id = "group_name")

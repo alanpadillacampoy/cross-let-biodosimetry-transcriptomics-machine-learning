@@ -58,18 +58,8 @@ wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
 wang_training_data <- as.data.frame(t(wang_training_data))
 colnames(wang_training_data) <- wang_training_data[1,]
 wang_training_data <- wang_training_data[-1,]
-wang_training_data <- type.convert(wang_training_data, as.is = TRUE)
-
-# ## Read Wang Test Data ----
-# wang_testing_data <- read.csv("wang_testing_dataset.csv", header = FALSE)
-# wang_testing_data <- as.data.frame(t(wang_testing_data))
-# colnames(wang_testing_data) <- wang_testing_data[1,]
-# wang_testing_data <- wang_testing_data[-1,]
-# wang_testing_data <- type.convert(wang_testing_data, as.is = TRUE)
-
-## Gene Selection ----
 wang_training_data <- wang_training_data %>% dplyr::select(c("Dose", all_of(signature)))
-# wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(signature)))
+wang_training_data <- type.convert(wang_training_data, as.is = TRUE)
 
 ## Normalization (invert comments for unnormalized data) ----
 # wang_training_data <- wang_training_data %>%

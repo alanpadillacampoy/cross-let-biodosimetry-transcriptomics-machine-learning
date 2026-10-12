@@ -21,7 +21,7 @@ unique_platforms <- unique_gpl_platforms(list_se)
 geo_metadata <- GEO_query_list(unique_platforms)
 
 #Standardizes the platform present in dataset 17
-geo_metadata <- correct_seventeen(list_se, geo_metadata)
+geo_metadata <- correct_GSE64375(list_se, geo_metadata)
 
 se <- get_expression_matrices(list_se)
 
@@ -35,7 +35,15 @@ log_checked_matrices <- check_log2_transform(annotated_expression_matrices)
 
 complete_matrices <- delete_NAs(log_checked_matrices)
 
-collapsed_matrices <- collapse_probes(complete_matrices)
+filtered_matrices <- lapply(names(complete_matrices), function(i){
+  x <- complete_matrices[[i]]
+  x <- x %>% filter(gene %in% gene_space_total)
+  return(x)
+})
+
+names(filtered_matrices) <- names(complete_matrices)
+
+collapsed_matrices <- collapse_probes(filtered)
 
 #scaled_matrices <- z_score_matrices(collapsed_matrices)
 
@@ -47,7 +55,7 @@ final_matrices <- collapsed_matrices
 # This instruction deletes everything but the final matrices, ----
 # which will be used for further analysis. To review each of the individual steps 
 # comment the function
-#clean_environment_1()
+# clean_environment_1()
  
 #saveRDS(final_matrices, file = "final_matrices.rds")
 #saveRDS(list_se, file = "list_se.rds")
