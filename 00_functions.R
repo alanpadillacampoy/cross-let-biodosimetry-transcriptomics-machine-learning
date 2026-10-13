@@ -24,7 +24,6 @@ if (!exists("list_se")) {
   # These files are deleted due to them being not human or mouse
   list_se[["SE_Ghandhi_2018_InVivo_GSE84898_GPL13497"]] <- NULL
   list_se[["SE_Park_2017_ExVivo_GSE102971_GPL10332_MacacaMulatta"]] <- NULL
-    
 }
 
 # Data cleaning, quality and validation ----
@@ -47,7 +46,6 @@ GEO_query_list <- function(unique_platforms){
   names(platform_metadata) <- unique_platforms
   
   for (i in 1:length(unique_platforms)) {
-    unique_platforms[i]
     geo_gpl <- GEOquery::getGEO(unique_platforms[i])
     platform_metadata[[i]] <- GEOquery::Table(geo_gpl)
   }
@@ -62,9 +60,9 @@ get_expression_matrices <- function(list_se) {
 }
 
 ## Corrects the issue with the platform metadata in the dataset GSE64375 ----
-correct_GSE64375 <- function(list_se, geo_metadata) {
+correct_GSE64375 <- function(geo_metadata) {
   
-  platform <- strsplit(names(list_se)["SE_Rouchka_2015_ExVivo_GSE64375_GPL6244"], "_")[[1]][6]
+  platform <- "GPL6244"
   
   sections_list <- strsplit(geo_metadata[[platform]]$gene_assignment, "///", fixed = TRUE)
   
@@ -94,13 +92,7 @@ correct_GSE64375 <- function(list_se, geo_metadata) {
   geo_metadata[[platform]]$GENE_SYMBOL <- extracted_targets
   return(geo_metadata)
 }
-######DELETE?????? ----
-# join_probes <- function(se){
-#   lapply(se, function(df_expression){
-#     probes <- rownames(df_expression)
-#     data.frame(probes = probes, stringsAsFactors = FALSE)
-#   })
-# }
+
 ## Selects the possible columns where the probes and symbols may be: ----
 find_gene_column <- function(geo_metadata){
 
@@ -122,7 +114,7 @@ find_id_column <- function(geo_metadata){
 } 
 
 ## Annotates the expression matrices with the genes, matching the probes ----
-#and the genes they map for
+## and the genes they map for
 annotate_expression_by_rownames <- function(se, geo_metadata, id_column, gene_column) {
   
   res <- lapply(names(se), function(dataset_name) {
@@ -194,7 +186,7 @@ check_log2_transform <- function(annotated_expression_matrices) {
 }
 
 ## This function does two things, deletes all probes that don't map to one ----
-#single gene and deletes all probes missing in more than 15% of samples 
+## single gene and deletes all probes missing in more than 15% of samples 
 delete_NAs <- function(annotated_expression_matrices){
   
   res <- lapply(names(annotated_expression_matrices), function(dataset_name) {
@@ -215,8 +207,8 @@ delete_NAs <- function(annotated_expression_matrices){
     #Deletes the random errors present in samples. If more than 15% of samples 
     #are missing a probe then the probe is deleted. 
     
-    end_col <- ncol(expr_df) - 3
-    expr_df$NAs <- rowSums(is.na(expr_df[, 3:end_col])) / end_col * 100
+    end_col <- ncol(expr_df)
+    expr_df$NAs <- rowSums(is.na(expr_df[, 3:end_col])) / (end_col - 2) * 100
     expr_df <- subset(expr_df, NAs <= 15)
     expr_df$NAs <- NULL
     

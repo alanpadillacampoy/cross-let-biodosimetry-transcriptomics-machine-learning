@@ -1,4 +1,4 @@
-elibrary(dplyr)
+library(dplyr)
 library(randomForest)
 library(tibble)
 library(ranger)
@@ -6,52 +6,85 @@ library(glmnet)
 library(catboost)
 library(rsample)
 library(purrr)
-
+library(beepr)
+start_time <- Sys.time()
 # list_se <- readRDS("list_se.rds")
 # final_matrices <- readRDS("final_matrices.rds")
 # changes <- readRDS("changes_data_cleaning.rds")
 
-wang_murine_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", 
-                                 "Igfbp4", "LOC118567921", "Lrrc70", "Ms4a1", "Phlda3", 
-                                 "Ptprn", "Rps20", "Serpine2", "Thy1", "Actb")
+wang_mouse_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", 
+                                "Igfbp4", "LOC118567921", "Lrrc70", "Ms4a1", "Phlda3", 
+                                "Ptprn", "Rps20", "Serpine2", "Thy1", "Actb")
 #without the "problem" genes    
-wang_reduced_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "Ifit1", "Igfbp4",
-                                  "Ms4a1", "Phlda3", "Ptprn", "Rps20", "Serpine2", "Thy1")
+wang_mouse_reduced_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "Ifit1", "Igfbp4",
+                                        "Ms4a1", "Phlda3", "Ptprn", "Rps20", "Serpine2", "Thy1")
 
 wang_human_signature_genes <- c("CCNG1", "DGKA", "FZR1", "H4C3", "H4C9", "IFIT1", 
                                 "IGFBP4", "LOC118567921", "LRRC70", "MS4A1", "PHLDA3", 
                                 "PTPRN", "RPS20", "SERPINE2", "THY1", "ACTB")
+
+wang_human_reduced_signature_genes <- c("CCNG1", "DGKA", "FZR1", "IFIT1", 
+                                        "IGFBP4", "MS4A1", "PHLDA3", "PTPRN", 
+                                        "RPS20", "SERPINE2", "THY1")
 
 li_human_signature_genes <- c("CDKN1A", "BAX", "MDM2", "XPC", "PCNA", "FDXR", 
                               "GDF15", "DDB2", "TNFRSF10B", "PHPT1", "ASTN2", 
                               "RPS27L", "BBC3", "TNFSF4", "POLH", "CCNG1", 
                               "PPM1D", "GADD45A", "ZMAT3", "SESN1", "AEN", 
                               "TRIAP1")
+
+li_mouse_signature_genes <- c("Cdkn1a", "Bax", "Mdm2", "Xpc", "Pcna", "Fdxr", 
+                              "Gdf15", "Ddb2", "Tnfrsf10b", "Phpt1", "Astn2", 
+                              "Rps27l", "Bbc3", "Tnfsf4", "Polh", "Ccng1", 
+                              "Ppm1d", "Gadd45a", "Zmat3", "Sesn1", "Aen", 
+                              "Triap1")
+
 zhao_human_signature_genes <- c("DDB2", "CD8A", "TALDO1", "PCNA", "EIF4G2", 
                                 "LCN2", "CDKN1A", "PRKCH", "ENO1", "PPM1D")
+
+zhao_mouse_signature_genes <- c("Ddb2", "Cd8a", "Taldo1", "Pcna", "Eif4g2", 
+                                "Lcn2", "Cdkn1a", "Prkch", "Eno1", "Ppm1d")
+
 FDXR_human <- "FDXR"
+FDXR_mouse <- "Fdxr"
 DDB2_human <- "DDB2"
+DDB2_mouse <- "Ddb2"
 GADD45A_human <- "GADD45A"
+GADD45A_mouse <- "Gadd45a"
 
 human_signature_list <- list(
-  wang_human = wang_human_signature_genes,
+  wang_human = wang_human_reduced_signature_genes,
   li_human   = li_human_signature_genes,
   zhao_human = zhao_human_signature_genes,
   FDXR_human = FDXR_human,
   DDB2_human = DDB2_human,
   GADD45A_human = GADD45A_human
 )
-gene_space <- reduce(human_signature_list, union)
+mouse_signture_list <- list(
+  wang_mouse = wang_mouse_reduced_signature_genes,
+  li_mouse   = li_mouse_signature_genes,
+  zhao_mouse= zhao_mouse_signature_genes,
+  FDXR_mouse = FDXR_mouse,
+  DDB2_mouse = DDB2_mouse,
+  GADD45A_mouse = GADD45A_mouse
+)
+gene_space_human <- reduce(human_signature_list, union)
+gene_space_mouse <- reduce(mouse_signture_list, union)
+gene_space_total <- union(gene_space_human, gene_space_mouse)
 
-signature <- wang_reduced_signature_genes
+signature <- wang_mouse_reduced_signature_genes
 size_signature <- length(signature)
 
 ## Data for the real testing ----
-outside_set <- as.data.frame(t(final_matrices[[mus_musculus_datasets[3]]]))
+outside_name <- wang_mouse_datasets[4]
+outside_name
+outside_set <- as.data.frame(t(final_matrices[[outside_name]]))
 outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
 outside_set <- outside_set %>% 
   dplyr::select(c("Dose", all_of(signature))) %>%
   dplyr::relocate(Dose, .before = 1)
+outside_set <- outside_set %>%
+  mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
 
 ## Read Wang Training Data ----
 wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
@@ -283,7 +316,6 @@ for (i in seq_along(seeds)) {
     
     lower_bound <- mean - margin.error
     upper_bound <- mean + margin.error
-    print(c(lower_bound, upper_bound))
   }
   
   CI_RMSE <- confidence_interval(performance_matrix, x = "RMSE")
@@ -361,11 +393,9 @@ for (i in seq_along(seeds)) {
       as.numeric(glmnet::predict.glmnet(elastic_model,
                                         newx = as.matrix(outside_set[, 3:ncol(outside_set)])))
   )
-  print(testing_matrix)
   testing_matrix <- testing_matrix %>% 
     dplyr::mutate(across(everything(), ~ ifelse(. > 0, ., 0)))
-  print(testing_matrix)
-  
+
   # Predict with catboost
   catboost_predictions <- catboost.predict(
     final_catboost_model,
@@ -413,4 +443,78 @@ model_performance <- cbind(
 )
 model_performance <- model_performance %>% relocate(Original_Model, .before = 2) %>%
   rename(seed_1 = My_Model)
+## Results from the reconstruction ----
+model_tested <- as.data.frame(t(model_performance))
+colnames(model_tested) <- as.character(model_tested[1,])
+model_tested <- model_tested[-1,]
+rownames(model_tested) <- sub("^seed_", "RS", rownames(model_tested))
+model_tested <- as.data.frame(lapply(model_tested, as.numeric))
 
+## Descriptive stats ---- 
+mean <- model_tested %>% slice(-1) %>%
+  summarise(across(where(is.numeric), \(x) mean(x)))
+sd <- model_tested %>% slice(-1) %>%
+  summarise(across(where(is.numeric), \(x) sd(x)))
+median <- model_tested %>% slice(-1) %>%
+  summarise(across(where(is.numeric), \(x) median(x)))
+iqr <- model_tested %>% slice(-1) %>%
+  summarise(across(where(is.numeric), \(x) IQR(x)))
+
+## Confidence Intervals ----
+CI_RMSE <- confidence_interval(model_tested, "RMSE")
+CI_MAE <- confidence_interval(model_tested, "MAE")
+CI_R2 <- confidence_interval(model_tested, "R2")
+CI_MRE <- confidence_interval(model_tested, "MRE")
+CI_REmax <- confidence_interval(model_tested, "REmax")
+
+## Paired t-tests ----
+# t.test(not_normalized$ RMSE[2:11], actb_normalized$RMSE[2:11], paired = TRUE)
+# t.test(not_normalized$MAE[2:11], actb_normalized$MAE[2:11], paired = TRUE)
+# t.test(not_normalized$RSquared[2:11], actb_normalized$RSquared[2:11], paired = TRUE)
+# t.test(not_normalized$MRE[2:11], actb_normalized$MRE[2:11], paired = TRUE)
+# t.test(not_normalized$REmax[2:11], actb_normalized$REmax[2:11], paired = TRUE)
+
+## Seed metrics ----
+metrics <- data.frame(
+  Metric = c("RMSE", "MAE", "R2", "MRE", "REmax"),
+  Original = c(0.97, 0.785, 0.949, 11.138, 28.687),
+  Mean = c(mean$RMSE, mean$MAE, mean$R2, mean$MRE, mean$REmax),
+  SD = c(sd$RMSE, sd$MAE, sd$R2, sd$MRE, sd$REmax),
+  Median = c(median$RMSE, median$MAE, median$R2, median$MRE, median$REmax),
+  CI_lower = c(CI_RMSE[1], CI_MAE[1], CI_R2[1], CI_MRE[1], CI_REmax[1]),
+  CI_upper = c(CI_RMSE[2], CI_MAE[2], CI_R2[2], CI_MRE[2], CI_REmax[2]),
+  IQR = c(iqr$RMSE, iqr$MAE, iqr$R2, iqr$MRE, iqr$REmax)
+)
+metrics <- metrics %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+write.csv(model_performance, "MMU_W11_GSE62623_FZ_V01_COMP.csv", row.names = FALSE)
+write.csv(metrics, "MMU_W11_GSE62623_FZ_V01_SUMM.csv", row.names = FALSE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Clock
+end_time <- Sys.time()
+print(end_time - start_time)
+beep(3)

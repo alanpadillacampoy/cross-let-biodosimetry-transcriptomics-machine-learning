@@ -37,7 +37,6 @@ homo_sapiens_datasets <- c(
   "SE_Amundson_2008_ExVivo_GSE8917_GPL1708",
   "SE_Amundson_2011_ExVivo_GSE23515_GPL6480",
   "SE_Amundson_2011_InVivo_GSE20162_GPL6480",
-  "SE_Ankermit_2015_ExVivo_GSE55953_GPL14550",
   "SE_Flores_2009_ExVivo_GSE15341_GPL8332",
   "SE_Ghandhi_2015_ExVivo_GSE65292_GPL13497",
   "SE_Girardi_2012_ExVivo_GSE20173_GPL6480",
@@ -107,3 +106,65 @@ available_datasets <- final_matrices %>% imap_dfr(~tibble (
                 length(intersect(rownames(.x), GADD45A_mouse)) == length(GADD45A_mouse),
                 length(intersect(rownames(.x), GADD45A_human)) == length(GADD45A_human)),
 ), .id = "group_name")
+
+wang_mouse_datasets <- available_datasets %>% 
+  filter(species == "Mouse" & wang_signature == TRUE) %>%
+  filter(!(group_name %in% neutron_mouse_datasets)) %>%
+  pull(group_name)
+wang_human_datasets <- available_datasets %>% 
+  filter(species == "Human" & wang_signature == TRUE) %>%
+  filter(!(group_name %in% neutron_human_datasets)) %>%
+  pull(group_name)
+li_mouse_datasets <- available_datasets %>% 
+  filter(species == "Mouse" & li_signature == TRUE) %>%
+  filter(!(group_name %in% neutron_mouse_datasets)) %>%
+  pull(group_name)
+li_human_datasets <- available_datasets %>% 
+  filter(species == "Human" & li_signature == TRUE) %>%
+  filter(!(group_name %in% neutron_human_datasets)) %>%
+  pull(group_name)
+zhao_mouse_datasets <- available_datasets %>% 
+  filter(species == "Mouse" & zhao_signature == TRUE) %>%
+  filter(!(group_name %in% neutron_mouse_datasets)) %>%
+  pull(group_name)
+zhao_human_datasets <- available_datasets %>% 
+  filter(species == "Human" & zhao_signature == TRUE) %>%
+  filter(!(group_name %in% neutron_human_datasets)) %>%
+  pull(group_name)
+FDXR_mouse_datasets <- available_datasets %>% 
+  filter(species == "Mouse" & FDXR == TRUE) %>%
+  filter(!(group_name %in% neutron_mouse_datasets)) %>%
+  pull(group_name)
+FDXR_human_datasets <- available_datasets %>% 
+  filter(species == "Human" & FDXR == TRUE) %>%
+  filter(!(group_name %in% neutron_human_datasets)) %>%
+  pull(group_name)
+DDB2_mouse_datasets <- available_datasets %>% 
+  filter(species == "Mouse" & DDB2 == TRUE) %>%
+  filter(!(group_name %in% neutron_mouse_datasets)) %>%
+  pull(group_name)
+DDB2_human_datasets <- available_datasets %>% 
+  filter(species == "Human" & DDB2 == TRUE) %>%
+  filter(!(group_name %in% neutron_human_datasets)) %>%
+  pull(group_name)
+GADD45A_mouse_datasets <- available_datasets %>% 
+  filter(species == "Mouse" & GADD45A == TRUE) %>%
+  filter(!(group_name %in% neutron_mouse_datasets)) %>%
+  pull(group_name)
+GADD45A_human_datasets <- available_datasets %>% 
+  filter(species == "Human" & GADD45A == TRUE) %>%
+  filter(!(group_name %in% neutron_human_datasets)) %>%
+  pull(group_name)
+
+
+
+
+
+
+
+
+
+
+
+
+
