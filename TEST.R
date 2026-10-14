@@ -25,12 +25,17 @@ human_signature_list <- list(
   DDB2_human = DDB2_human,
   GADD45A_human = GADD45A_human
 )
-gene_space <- reduce(human_signature_list, union)
+gene_space_human <- purrr::reduce(human_signature_list, union)
+gene_space_mouse <- purrr::reduce(mouse_signture_list, union)
+gene_space_total <- union(gene_space_human, gene_space_mouse)
 
-  full_metadata <- read.csv("full_metadata.csv")
+signature <- wang_mouse_reduced_signature_genes
+size_signature <- length(signature)
+
+full_metadata <- read.csv("full_metadata.csv")
 
 full_metadata %>% group_by(organism) %>%
-  count(dataset_name) %>%
+  dplyr::count(dataset_name) %>%
   print(n = Inf)
 
 homo_sapiens_datasets <- c(

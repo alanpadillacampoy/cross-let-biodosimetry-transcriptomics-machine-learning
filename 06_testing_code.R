@@ -68,15 +68,15 @@ mouse_signture_list <- list(
   DDB2_mouse = DDB2_mouse,
   GADD45A_mouse = GADD45A_mouse
 )
-gene_space_human <- reduce(human_signature_list, union)
-gene_space_mouse <- reduce(mouse_signture_list, union)
+gene_space_human <- purrr::reduce(human_signature_list, union)
+gene_space_mouse <- purrr::reduce(mouse_signture_list, union)
 gene_space_total <- union(gene_space_human, gene_space_mouse)
 
 signature <- wang_mouse_reduced_signature_genes
 size_signature <- length(signature)
 
 ## Data for the real testing ----
-outside_name <- wang_mouse_datasets[4]
+outside_name <- wang_mouse_datasets[3]
 outside_name
 outside_set <- as.data.frame(t(final_matrices[[outside_name]]))
 outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
@@ -316,6 +316,7 @@ for (i in seq_along(seeds)) {
     
     lower_bound <- mean - margin.error
     upper_bound <- mean + margin.error
+    return(c(lower_bound, upper_bound))
   }
   
   CI_RMSE <- confidence_interval(performance_matrix, x = "RMSE")
