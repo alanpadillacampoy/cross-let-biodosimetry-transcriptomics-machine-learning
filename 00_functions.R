@@ -6,7 +6,7 @@
 packages <- c(
   "DoReMiTra", "SummarizedExperiment", "stringr", "dplyr", 
   "BiocManager", "GEOquery", "tibble", "WGCNA", "purrr", 
-  "orthogene", "randomForest", "ranger", "glmnet", "catboost", "rsample"
+  "orthogene", "randomForest", "ranger", "glmnet", "catboost", "rsample", "beepr"
 )
 
 # Load all packages silently
@@ -342,3 +342,4 @@ clean_environment_1 <- function(){
 
 # Metadata ----
 
+beep(1)

@@ -191,3 +191,4 @@ full_metadata[,10] <- case_when(
 
 write.csv(full_metadata, 
           file = "full_metadata.csv", row.names = FALSE)
+beep(3)

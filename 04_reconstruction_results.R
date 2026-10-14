@@ -41,3 +41,5 @@ metrics <- data.frame(
   IQR = c(iqr$RMSE, iqr$MAE, iqr$R2, iqr$MRE, iqr$REmax)
 )
 metrics <- metrics %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+beep(3)
