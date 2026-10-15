@@ -92,3 +92,16 @@ sum(mae_diff_red < 0)
 sum(mae_diff_red == 0)
 
 beep(3)
+
+
+
+
+raw_signature_performance
+shapiro.test(as.numeric(raw_signature_performance[1,3:102]))
+qqnorm(as.numeric(raw_signature_performance[5,3:102]),  main = "Normal Q-Q Plot", col = "blue", pch = 19)
+qqline(as.numeric(raw_signature_performance[5,3:102]),  col = "red", lwd = 2)
+t.test(
+  as.numeric(raw_signature_performance[5, 3:102]),
+  mu = 28.687
+)
+

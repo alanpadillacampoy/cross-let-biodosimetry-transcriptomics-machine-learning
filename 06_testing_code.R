@@ -444,22 +444,21 @@ model_performance <- cbind(
 )
 model_performance <- model_performance %>% relocate(Original_Model, .before = 2) %>%
   rename(seed_1 = My_Model)
+
+model_performance <- read.csv("100_seeds_original_performance.csv")
+
 ## Results from the reconstruction ----
 model_tested <- as.data.frame(t(model_performance))
 colnames(model_tested) <- as.character(model_tested[1,])
-model_tested <- model_tested[-1,]
+model_tested <- model_tested[-1:-2,]
 rownames(model_tested) <- sub("^seed_", "RS", rownames(model_tested))
 model_tested <- as.data.frame(lapply(model_tested, as.numeric))
 
 ## Descriptive stats ---- 
-mean <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) mean(x)))
-sd <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) sd(x)))
-median <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) median(x)))
-iqr <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) IQR(x)))
+mean <- model_tested %>% summarise(across(where(is.numeric), \(x) mean(x)))
+sd <- model_tested %>% summarise(across(where(is.numeric), \(x) sd(x)))
+median <- model_tested %>% summarise(across(where(is.numeric), \(x) median(x)))
+iqr <- model_tested %>% summarise(across(where(is.numeric), \(x) IQR(x)))
 
 ## Confidence Intervals ----
 CI_RMSE <- confidence_interval(model_tested, "RMSE")
