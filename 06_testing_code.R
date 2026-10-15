@@ -77,7 +77,9 @@ size_signature <- length(signature)
 
 ## Data for the real testing ----
 outside_name <- wang_mouse_datasets[3]
-outside_name
+strsplit(outside_name, "_")[[1]][5]
+complete_name <- "MMU_W11_GSE137192__FZ_V01_COMP.csv"
+summary_name <- "MMU_W11_GSE137192_FZ_V01_SUMM.csv"
 outside_set <- as.data.frame(t(final_matrices[[outside_name]]))
 outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
 outside_set <- outside_set %>% 
@@ -445,8 +447,6 @@ model_performance <- cbind(
 model_performance <- model_performance %>% relocate(Original_Model, .before = 2) %>%
   rename(seed_1 = My_Model)
 
-model_performance <- read.csv("100_seeds_original_performance.csv")
-
 ## Results from the reconstruction ----
 model_tested <- as.data.frame(t(model_performance))
 colnames(model_tested) <- as.character(model_tested[1,])
@@ -487,8 +487,8 @@ metrics <- data.frame(
 )
 metrics <- metrics %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
 
-write.csv(model_performance, "MMU_W11_GSE62623_FZ_V01_COMP.csv", row.names = FALSE)
-write.csv(metrics, "MMU_W11_GSE62623_FZ_V01_SUMM.csv", row.names = FALSE)
+write.csv(model_performance, complete_name, row.names = FALSE)
+write.csv(metrics, summary_name, row.names = FALSE)
 
 
 

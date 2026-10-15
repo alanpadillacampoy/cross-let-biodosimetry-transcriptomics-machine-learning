@@ -1,19 +1,16 @@
+model_performance <- read.csv("100_seeds_reduced_performance.csv")
 ## Results from the reconstruction ----
 model_tested <- as.data.frame(t(model_performance))
 colnames(model_tested) <- as.character(model_tested[1,])
-model_tested <- model_tested[-1,]
+model_tested <- model_tested[-1:-2,]
 rownames(model_tested) <- sub("^seed_", "RS", rownames(model_tested))
 model_tested <- as.data.frame(lapply(model_tested, as.numeric))
 
 ## Descriptive stats ---- 
-mean <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) mean(x)))
-sd <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) sd(x)))
-median <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) median(x)))
-iqr <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) IQR(x)))
+mean <- model_tested %>% summarise(across(where(is.numeric), \(x) mean(x)))
+sd <- model_tested %>% summarise(across(where(is.numeric), \(x) sd(x)))
+median <- model_tested %>% summarise(across(where(is.numeric), \(x) median(x)))
+iqr <- model_tested %>% summarise(across(where(is.numeric), \(x) IQR(x)))
 
 ## Confidence Intervals ----
 CI_RMSE <- confidence_interval(model_tested, "RMSE")
@@ -42,4 +39,27 @@ metrics <- data.frame(
 )
 metrics <- metrics %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
 
-beep(3)
+t_test_RMSE <- t.test(as.numeric(model_performance[1, 3:102]), mu = metrics$Original[1])
+t_test_MAE <- t.test(as.numeric(model_performance[2, 3:102]), mu = metrics$Original[2])
+t_test_R2 <- t.test(as.numeric(model_performance[3, 3:102]), mu = metrics$Original[3])
+t_test_MRE <- t.test(as.numeric(model_performance[4, 3:102]), mu = metrics$Original[4])
+t_test_REmax <- t.test(as.numeric(model_performance[5, 3:102]), mu = metrics$Original[5])
+
+t_test_RMSE
+t_test_MAE
+t_test_R2
+t_test_MRE
+t_test_REmax
+
+p_values <- c(t_test_RMSE$p.value, t_test_MAE$p.value, t_test_R2$p.value,
+              t_test_MRE$p.value, t_test_REmax$p.value)
+adjusted_p_values <- p.adjust(p_values, method = "holm")
+adjusted_p_values
+metrics 
+t_test_RMSE
+t_test_MAE
+t_test_R2
+t_test_MRE
+t_test_REmax
+beep(10)
+

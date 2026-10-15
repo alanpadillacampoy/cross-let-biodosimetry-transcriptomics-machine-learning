@@ -90,17 +90,17 @@ wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(signat
 wang_testing_data <- type.convert(wang_testing_data, as.is = TRUE)
 
 ## Normalization (invert comments for unnormalized data) ----
-wang_training_data <- wang_training_data %>%
-  dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
-  select(-Actb)
-wang_testing_data <- wang_testing_data %>%
-  dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
-  select(-Actb)
+# wang_training_data <- wang_training_data %>%
+#   dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
+#   select(-Actb)
+# wang_testing_data <- wang_testing_data %>%
+#   dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
+#   select(-Actb)
+# 
+wang_training_data <- wang_training_data %>% select(-Actb)
+wang_testing_data <- wang_testing_data %>% select(-Actb)
 
-#wang_training_data <- wang_training_data %>% select(-Actb)
-#wang_testing_data <- wang_testing_data %>% select(-Actb)
-
-seeds <- 1
+seeds <- 1:100
 
 comparison_list <- vector("list", length(seeds))
 names(comparison_list) <- paste0("seed_", seeds)

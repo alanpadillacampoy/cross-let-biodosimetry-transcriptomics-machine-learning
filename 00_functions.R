@@ -332,6 +332,24 @@ track_changes <- function(se, complete_matrices, scaled_matrices, final_matrices
   return(res) 
 }
 
+# Confidence Intervals
+confidence_interval <- function(performance_matrix, x) {
+  mean <- mean(performance_matrix[[x]])
+  n <- length(performance_matrix[[x]])
+  sd <- sd(performance_matrix[[x]])
+  se <- sd / sqrt(n)
+  
+  alpha = 0.05
+  degrees.freedom = n - 1
+  t.score = qt(p = alpha / 2, df=degrees.freedom, lower.tail = FALSE)
+  
+  margin.error <- t.score * se
+  
+  lower_bound <- mean - margin.error
+  upper_bound <- mean + margin.error
+  return(c(lower_bound, upper_bound))
+}
+
 ## Cleans the environment ----
 clean_environment_1 <- function(){
   rm(list = setdiff(ls(envir = .GlobalEnv), c("final_matrices", "list_se", 
