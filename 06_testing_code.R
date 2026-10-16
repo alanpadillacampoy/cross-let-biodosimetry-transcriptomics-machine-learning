@@ -76,9 +76,9 @@ signature <- wang_mouse_reduced_signature_genes
 size_signature <- length(signature)
 
 ## Data for the real testing ----
-outside_name <- wang_mouse_datasets[4]
+outside_name <- wang_mouse_datasets[3]
 strsplit(outside_name, "_")[[1]][5]
-complete_name <- "MMU_W11_GSE62623__FZ_V01_COMP.csv"
+complete_name <- "MMU_W11_GSE62623_FZ_V01_COMP.csv"
 summary_name <- "MMU_W11_GSE62623_FZ_V01_SUMM.csv"
 outside_set <- as.data.frame(t(final_matrices[[outside_name]]))
 outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
