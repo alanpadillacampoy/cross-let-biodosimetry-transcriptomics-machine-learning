@@ -1,79 +1,12 @@
 start_time <- Sys.time()
-nosleep_on()
-# list_se <- readRDS("list_se.rds")
-# final_matrices <- readRDS("final_matrices.rds")
-# changes <- readRDS("changes_data_cleaning.rds")
-
-wang_mouse_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "H4c3", "H4c9", "Ifit1", 
-                                "Igfbp4", "LOC118567921", "Lrrc70", "Ms4a1", "Phlda3", 
-                                "Ptprn", "Rps20", "Serpine2", "Thy1", "Actb")
-#without the "problem" genes    
-wang_mouse_reduced_signature_genes <- c("Ccng1", "Dgka", "Fzr1", "Ifit1", "Igfbp4",
-                                        "Ms4a1", "Phlda3", "Ptprn", "Rps20", "Serpine2", "Thy1")
-
-wang_human_signature_genes <- c("CCNG1", "DGKA", "FZR1", "H4C3", "H4C9", "IFIT1", 
-                                "IGFBP4", "LOC118567921", "LRRC70", "MS4A1", "PHLDA3", 
-                                "PTPRN", "RPS20", "SERPINE2", "THY1", "ACTB")
-
-wang_human_reduced_signature_genes <- c("CCNG1", "DGKA", "FZR1", "IFIT1", 
-                                        "IGFBP4", "MS4A1", "PHLDA3", "PTPRN", 
-                                        "RPS20", "SERPINE2", "THY1")
-
-li_human_signature_genes <- c("CDKN1A", "BAX", "MDM2", "XPC", "PCNA", "FDXR", 
-                              "GDF15", "DDB2", "TNFRSF10B", "PHPT1", "ASTN2", 
-                              "RPS27L", "BBC3", "TNFSF4", "POLH", "CCNG1", 
-                              "PPM1D", "GADD45A", "ZMAT3", "SESN1", "AEN", 
-                              "TRIAP1")
-
-li_mouse_signature_genes <- c("Cdkn1a", "Bax", "Mdm2", "Xpc", "Pcna", "Fdxr", 
-                              "Gdf15", "Ddb2", "Tnfrsf10b", "Phpt1", "Astn2", 
-                              "Rps27l", "Bbc3", "Tnfsf4", "Polh", "Ccng1", 
-                              "Ppm1d", "Gadd45a", "Zmat3", "Sesn1", "Aen", 
-                              "Triap1")
-
-zhao_human_signature_genes <- c("DDB2", "CD8A", "TALDO1", "PCNA", "EIF4G2", 
-                                "LCN2", "CDKN1A", "PRKCH", "ENO1", "PPM1D")
-
-zhao_mouse_signature_genes <- c("Ddb2", "Cd8a", "Taldo1", "Pcna", "Eif4g2", 
-                                "Lcn2", "Cdkn1a", "Prkch", "Eno1", "Ppm1d")
-
-FDXR_human <- "FDXR"
-FDXR_mouse <- "Fdxr"
-DDB2_human <- "DDB2"
-DDB2_mouse <- "Ddb2"
-GADD45A_human <- "GADD45A"
-GADD45A_mouse <- "Gadd45a"
-
-human_signature_list <- list(
-  wang_human = wang_human_reduced_signature_genes,
-  li_human   = li_human_signature_genes,
-  zhao_human = zhao_human_signature_genes,
-  FDXR_human = FDXR_human,
-  DDB2_human = DDB2_human,
-  GADD45A_human = GADD45A_human
-)
-mouse_signture_list <- list(
-  wang_mouse = wang_mouse_reduced_signature_genes,
-  li_mouse   = li_mouse_signature_genes,
-  zhao_mouse= zhao_mouse_signature_genes,
-  FDXR_mouse = FDXR_mouse,
-  DDB2_mouse = DDB2_mouse,
-  GADD45A_mouse = GADD45A_mouse
-)
-gene_space_human <- reduce(human_signature_list, union)
-gene_space_mouse <- reduce(mouse_signture_list, union)
-gene_space_total <- union(gene_space_human, gene_space_mouse)
-
-signature <- wang_mouse_reduced_signature_genes
-size_signature <- length(signature)
 
 ## Data for the real testing ----
-outside_name <- wang_mouse_datasets[4]
+outside_name <- wang_mouse_datasets[1]
 gse_number <- regmatches(outside_name, regexpr("GSE[0-9]+", outside_name))
 gse_number
-complete_name <- paste0("MMU_W11_", gse_number, "_PF_V01_COMP.csv")
+complete_name <- paste0("MMU_W11_", gse_number, "_RT_V01_COMP.csv")
 complete_name
-summary_name  <- paste0("MMU_W11_", gse_number, "_PF_V01_SUMM.csv")
+summary_name  <- paste0("MMU_W11_", gse_number, "_RT_V01_SUMM.csv")
 summary_name
 outside_set <- as.data.frame(t(final_matrices[[outside_name]]))
 outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
@@ -91,18 +24,7 @@ wang_training_data <- wang_training_data[-1,]
 wang_training_data <- wang_training_data %>% dplyr::select(c("Dose", all_of(signature)))
 wang_training_data <- type.convert(wang_training_data, as.is = TRUE)
 
-## Normalization (invert comments for unnormalized data) ----
-# wang_training_data <- wang_training_data %>%
-#   dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
-#   select(-Actb)
-# wang_testing_data <- wang_testing_data %>%
-#   dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
-#   select(-Actb)
-# 
-# wang_training_data <- wang_training_data %>% select(-Actb)
-# wang_testing_data <- wang_testing_data %>% select(-Actb)
-
-seeds <- 1:100
+seeds <- 1
 
 comparison_list <- vector("list", length(seeds))
 names(comparison_list) <- paste0("seed_", seeds)
@@ -322,52 +244,33 @@ for (i in seq_along(seeds)) {
   CI_MRE <- confidence_interval(performance_matrix, x = "MRE")
   CI_REmax <- confidence_interval(performance_matrix, x = "REmax")
   
-  ## Changes from the frozen model----
-  # set.seed(1)
-  # 70/30 Split ----
-  outside_data_split <- rsample::initial_split(outside_set, prop = 0.70)
-  outside_training_data <- rsample::training(outside_data_split)
-  outside_testing_data <- rsample::testing(outside_data_split)
-  # set.seed(seed)
-  # Augmented outside data
-  outside_training_data_augmented <- outside_training_data %>%
-    dplyr::group_by(Dose) %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), ~ .x + runif(1, min = -0.1, max = 0.1) * ifelse(dplyr::n() > 1, sd(.x), 0))) %>%
-    dplyr::ungroup()
-  augmented_outside_set <- rbind(outside_training_data, outside_training_data_augmented)
-  rownames(augmented_outside_set) <- NULL
+  # Linear Regression Model
+  linear_model <- lm(Dose ~ . -Sample_id, data = augmented_set)
   
-  # Add a sample id as a tracker
-  augmented_outside_set$Sample_id <- seq_len(nrow(augmented_outside_set))
-  augmented_outside_set <- augmented_outside_set %>% relocate(Sample_id, 1)
-  
-  # Linear Regression Model ##CHANGE##
-  linear_model <- lm(Dose ~ . -Sample_id, data = augmented_outside_set)
-  
-  # Random Forest Regression (version with ranger) ##CHANGE##
+  # Random Forest Regression (version with ranger)
   random_forest_model <- ranger::ranger(
     Dose ~ . -Sample_id,
-    data = augmented_outside_set,
+    data = augmented_set,
     num.trees = 60,
     seed = seed,
     max.depth = 2,
     splitrule = "variance"
   )
   
-  # Polynomial Linear Model ##CHANGE##
-  wang_poly <- augmented_outside_set %>% 
+  # Polynomial Linear Model
+  wang_poly <- augmented_set %>% 
     dplyr::mutate(across(3:last_col(), ~ .x^2))
   polynomial_model <- lm(Dose ~ . -Sample_id, data = wang_poly)
   
-  # Square Root Linear Model ##CHANGE##
-  wang_root <- augmented_outside_set %>% 
+  # Square Root Linear Model
+  wang_root <- augmented_set %>% 
     dplyr::mutate(across(3:last_col(), ~ sqrt(.x)))
   square_root_model <- lm(Dose ~. -Sample_id, data = wang_root)
   
-  # ElasticNet Regression Model ##CHANGE##
+  # ElasticNet Regression Model
   elastic_model <- glmnet::glmnet(
-    x = as.matrix(augmented_outside_set[, 3:ncol(augmented_outside_set)]),
-    y = augmented_outside_set$Dose,
+    x = as.matrix(augmented_set[, 3:ncol(augmented_set)]),
+    y = augmented_set$Dose,
     alpha = 0.5,
     lambda = 1.0,
     standardize = FALSE,
@@ -392,23 +295,23 @@ for (i in seq_along(seeds)) {
     )
   )
   
-  # Linear model transformations ##CHANGE##
-  testing_poly <- outside_testing_data %>% 
+  # Linear model transformations
+  testing_poly <- outside_set %>% 
     dplyr::mutate(across(3:last_col(), ~ .x^2))
-  testing_root <- outside_testing_data %>% 
+  testing_root <- outside_set %>% 
     dplyr::mutate(across(3:last_col(), ~ sqrt(.x)))
   
-  # Predicting the testing data ##CHANGE##
+  # Predicting the testing data
   testing_matrix <- data.frame(
-    Dose = outside_testing_data$Dose,
-    Linear = predict(linear_model, newdata = outside_testing_data),
+    Dose = outside_set$Dose,
+    Linear = predict(linear_model, newdata = outside_set),
     Polynomial = predict(polynomial_model, newdata = testing_poly),
     SquareRoot = predict(square_root_model, newdata = testing_root),
     RandomForest = predict(random_forest_model, 
-                           data = outside_testing_data)$predictions,
+                           data = outside_set)$predictions,
     ElasticNet = 
       as.numeric(glmnet::predict.glmnet(elastic_model,
-                                        newx = as.matrix(outside_testing_data[, 3:ncol(outside_testing_data)])))
+                                        newx = as.matrix(outside_set[, 3:ncol(outside_set)])))
   )
   testing_matrix <- testing_matrix %>% 
     dplyr::mutate(across(everything(), ~ ifelse(. > 0, ., 0)))
@@ -460,22 +363,19 @@ model_performance <- cbind(
 )
 model_performance <- model_performance %>% relocate(Original_Model, .before = 2) %>%
   rename(seed_1 = My_Model)
+
 ## Results from the reconstruction ----
 model_tested <- as.data.frame(t(model_performance))
 colnames(model_tested) <- as.character(model_tested[1,])
-model_tested <- model_tested[-1,]
+model_tested <- model_tested[-1:-2,]
 rownames(model_tested) <- sub("^seed_", "RS", rownames(model_tested))
 model_tested <- as.data.frame(lapply(model_tested, as.numeric))
 
 ## Descriptive stats ---- 
-mean <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) mean(x)))
-sd <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) sd(x)))
-median <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) median(x)))
-iqr <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) IQR(x)))
+mean <- model_tested %>% summarise(across(where(is.numeric), \(x) mean(x)))
+sd <- model_tested %>% summarise(across(where(is.numeric), \(x) sd(x)))
+median <- model_tested %>% summarise(across(where(is.numeric), \(x) median(x)))
+iqr <- model_tested %>% summarise(across(where(is.numeric), \(x) IQR(x)))
 
 ## Confidence Intervals ----
 CI_RMSE <- confidence_interval(model_tested, "RMSE")
@@ -535,4 +435,3 @@ write.csv(metrics, summary_name, row.names = FALSE)
 end_time <- Sys.time()
 print(end_time - start_time)
 beep(3)
-nosleep_off()
