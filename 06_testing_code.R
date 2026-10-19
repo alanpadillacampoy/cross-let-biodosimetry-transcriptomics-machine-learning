@@ -76,7 +76,7 @@ signature <- wang_mouse_reduced_signature_genes
 size_signature <- length(signature)
 
 ## Data for the real testing ----
-outside_name <- wang_mouse_datasets[3]
+outside_name <- wang_mouse_datasets[1]
 strsplit(outside_name, "_")[[1]][5]
 complete_name <- "MMU_W11_GSE62623_FZ_V01_COMP.csv"
 summary_name <- "MMU_W11_GSE62623_FZ_V01_SUMM.csv"

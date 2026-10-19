@@ -1,5 +1,22 @@
 start_time <- Sys.time()
 
+a <- as.data.frame(t(final_matrices[[wang_mouse_datasets[1]]]))
+b <- as.data.frame(t(final_matrices[[wang_mouse_datasets[2]]]))
+c <- as.data.frame(t(final_matrices[[wang_mouse_datasets[3]]]))
+d <- as.data.frame(t(final_matrices[[wang_mouse_datasets[4]]]))
+
+a <- a %>% select(all_of(wang_mouse_reduced_signature_genes))
+b <- b %>% select(all_of(wang_mouse_reduced_signature_genes))
+c <- c %>% select(all_of(wang_mouse_reduced_signature_genes))
+d <- d %>% select(all_of(wang_mouse_reduced_signature_genes))
+
+abcd <- bind_rows("a"=a, "b"=b, "c"=c, "d"=d, .id="study")
+View(abcd)
+
+
+
+
+
 ## Data for the real testing ----
 outside_name <- wang_mouse_datasets[1]
 gse_number <- regmatches(outside_name, regexpr("GSE[0-9]+", outside_name))
