@@ -124,6 +124,7 @@ collapsed_matrices <- collapse_probes(filtered_matrices)
 #final_matrices <- ortholog_correction(scaled_matrices, list_se)
 final_matrices <- collapsed_matrices
 
+
 #changes <- track_changes(se, complete_matrices, scaled_matrices, final_matrices)
 
 # This instruction deletes everything but the final matrices, ----

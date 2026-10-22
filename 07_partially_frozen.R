@@ -76,22 +76,20 @@ nosleep_on()
   
   signature <- wang_mouse_reduced_signature_genes
   size_signature <- length(signature)
-  
+   
   ## Data for the real testing ----
   outside_name <- wang_mouse_datasets[4]
   gse_number <- regmatches(outside_name, regexpr("GSE[0-9]+", outside_name))
   gse_number
-  complete_name <- paste0("MMU_W11_", gse_number, "_PF_V01_COMP.csv")
+  complete_name <- paste0("MMU_W11_", gse_number, "_PF_V02_COMP.csv")
   complete_name
-  summary_name  <- paste0("MMU_W11_", gse_number, "_PF_V01_SUMM.csv")
+  summary_name  <- paste0("MMU_W11_", gse_number, "_PF_V02_SUMM.csv")
   summary_name
   outside_set <- as.data.frame(t(final_matrices[[outside_name]]))
   outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
   outside_set <- outside_set %>% 
     dplyr::select(c("Dose", all_of(signature))) %>%
     dplyr::relocate(Dose, .before = 1)
-  outside_set <- outside_set %>%
-    mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
   
   ## Read Wang Training Data ----
   wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
@@ -333,12 +331,16 @@ nosleep_on()
     CI_REmax <- confidence_interval(performance_matrix, x = "REmax")
     
     ## Changes from the frozen model----
-    # set.seed(1)
+    set.seed(1)
     # 70/30 Split ----
     outside_data_split <- rsample::initial_split(outside_set, prop = 0.70)
     outside_training_data <- rsample::training(outside_data_split)
+    outside_training_data <- outside_training_data %>%
+      mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
     outside_testing_data <- rsample::testing(outside_data_split)
-    # set.seed(seed)
+    outside_testing_data <- outside_testing_data %>%
+      mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
+    set.seed(seed)
     # Augmented outside data
     outside_training_data_augmented <- outside_training_data %>%
       dplyr::group_by(Dose) %>%
