@@ -1,37 +1,53 @@
 start_time <- Sys.time()
 
-a <- as.data.frame(t(final_matrices[[wang_mouse_datasets[1]]]))
-b <- as.data.frame(t(final_matrices[[wang_mouse_datasets[2]]]))
-c <- as.data.frame(t(final_matrices[[wang_mouse_datasets[3]]]))
-d <- as.data.frame(t(final_matrices[[wang_mouse_datasets[4]]]))
+# a <- as.data.frame(t(final_matrices[[wang_mouse_datasets[1]]]))
+# b <- as.data.frame(t(final_matrices[[wang_mouse_datasets[2]]]))
+# c <- as.data.frame(t(final_matrices[[wang_mouse_datasets[3]]]))
+# d <- as.data.frame(t(final_matrices[[wang_mouse_datasets[4]]]))
+# 
+# a <- a %>% select(all_of(wang_mouse_reduced_signature_genes)) %>%
+#   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
+# b <- b %>% select(all_of(wang_mouse_reduced_signature_genes)) %>%
+#   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
+# c <- c %>% select(all_of(wang_mouse_reduced_signature_genes)) %>%
+#   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
+# d <- d %>% select(all_of(wang_mouse_reduced_signature_genes)) %>%
+#   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
+# 
+# hold_out <- 1
+# signature <- wang_mouse_reduced_signature_genes
+# 
+# if (hold_out == 1) {
+#   testing_set <- bind_rows("b" = b, "c" = c, "d" = d)
+# } else if (hold_out == 2) {
+#   testing_set <- bind_rows("a" = a, "c" = c, "d" = d)
+# } else if (hold_out == 3) {
+#   testing_set <- bind_rows("a" = a, "b" = b, "d" = d)
+# } else if (hold_out == 4) {
+#   testing_set <- bind_rows("a" = a, "b" = b, "c" = c)
+# }
+testing_set$Sample_id <- seq_len(nrow(testing_set))
+testing_set <- testing_set %>% relocate(Sample_id, 1)
+# testing_set$Dose <- full_metadata$dose_Gy[match(rownames(testing_set), full_metadata$sample_ID)]
+# testing_set <- testing_set %>% dplyr::relocate(Dose, .before = 2)
+# 
+# ## Data for the real testing ----
+# outside_name <- wang_mouse_datasets[hold_out]
+# gse_number <- regmatches(outside_name, regexpr("GSE[0-9]+", outside_name))
+# gse_number
+# complete_name <- paste0("MMU_W11_", gse_number, "_RT_V01_COMP.csv")
+# complete_name
+# summary_name  <- paste0("MMU_W11_", gse_number, "_RT_V01_SUMM.csv")
+# summary_name
+# outside_set <- as.data.frame(t(final_matrices[[outside_name]]))
+# outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
+# outside_set <- outside_set %>% 
+#   dplyr::select(c("Dose", all_of(signature))) %>%
+#   dplyr::relocate(Dose, .before = 1) %>%
+#   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
 
-a <- a %>% select(all_of(wang_mouse_reduced_signature_genes))
-b <- b %>% select(all_of(wang_mouse_reduced_signature_genes))
-c <- c %>% select(all_of(wang_mouse_reduced_signature_genes))
-d <- d %>% select(all_of(wang_mouse_reduced_signature_genes))
 
-abcd <- bind_rows("a"=a, "b"=b, "c"=c, "d"=d, .id="study")
-View(abcd)
-
-
-
-
-
-## Data for the real testing ----
-outside_name <- wang_mouse_datasets[1]
-gse_number <- regmatches(outside_name, regexpr("GSE[0-9]+", outside_name))
-gse_number
-complete_name <- paste0("MMU_W11_", gse_number, "_RT_V01_COMP.csv")
-complete_name
-summary_name  <- paste0("MMU_W11_", gse_number, "_RT_V01_SUMM.csv")
-summary_name
-outside_set <- as.data.frame(t(final_matrices[[outside_name]]))
-outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
-outside_set <- outside_set %>% 
-  dplyr::select(c("Dose", all_of(signature))) %>%
-  dplyr::relocate(Dose, .before = 1)
-outside_set <- outside_set %>%
-  mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
+##############################################################
 
 ## Read Wang Training Data ----
 wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
@@ -40,42 +56,40 @@ colnames(wang_training_data) <- wang_training_data[1,]
 wang_training_data <- wang_training_data[-1,]
 wang_training_data <- wang_training_data %>% dplyr::select(c("Dose", all_of(signature)))
 wang_training_data <- type.convert(wang_training_data, as.is = TRUE)
+outside_set <- wang_training_data
+## Read Wang Test Data ----
+wang_testing_data <- read.csv("wang_testing_dataset.csv", header = FALSE)
+wang_testing_data <- as.data.frame(t(wang_testing_data))
+colnames(wang_testing_data) <- wang_testing_data[1,]
+wang_testing_data <- wang_testing_data[-1,]
+wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(signature)))
+wang_testing_data <- type.convert(wang_testing_data, as.is = TRUE)
+testing_set <- wang_testing_data
+##############################################################
 
 seeds <- 1
 
 comparison_list <- vector("list", length(seeds))
 names(comparison_list) <- paste0("seed_", seeds)
-
+seed <- 1
 for (i in seq_along(seeds)) {
   seed <- seeds[i]
   set.seed(seed)
-  ## Data augmentation ----
-  wang_training_data_augmented <- wang_training_data %>%
-    mutate(Target = case_when(
-      Dose == 0  ~ 0,
-      Dose < 4  ~ 2,
-      Dose < 6  ~ 4,
-      Dose < 9  ~ 6,
-      Dose < 12  ~ 9,
-      TRUE  ~ 12,
-    )) %>% 
-    relocate(Target, 1) %>%
-    dplyr::group_by(Target) %>%
-    dplyr::mutate(across(-Dose, ~ .x + runif(n = 1, min = -0.1, max = 0.1)*sd(.x))) %>%
-    dplyr::ungroup()
-  
-  wang_training_data_augmented$Target <- NULL
-  
-  augmented_set <- rbind(wang_training_data_augmented, wang_training_data)
-  rownames(augmented_set) <- NULL
+  # ## Data augmentation ----
+  # outside_set_augmented <- outside_set %>%
+  #   dplyr::group_by(Dose) %>%
+  #   dplyr::mutate(dplyr::across(dplyr::everything(), ~ .x + runif(n = 1, min = -0.1, max = 0.1)*sd(.x))) %>%
+  #   dplyr::ungroup()
+  # 
+  # augmented_set <- rbind(outside_set_augmented, outside_set)
+  # rownames(augmented_set) <- NULL
   
   # Add a sample id as a tracker
   augmented_set$Sample_id <- seq_len(nrow(augmented_set))
   augmented_set <- augmented_set %>% relocate(Sample_id, 1)
-  # wang_testing_data$Sample_id <- seq_len(nrow(wang_testing_data))
-  # wang_testing_data <- wang_testing_data %>% relocate(Sample_id, 1)
-  outside_set$Sample_id <- seq_len(nrow(outside_set))
-  outside_set <- outside_set %>% relocate(Sample_id, 1)
+  # # wang_testing_data$Sample_id <- seq_len(nrow(wang_testing_data))
+  # # wang_testing_data <- wang_testing_data %>% relocate(Sample_id, 1)
+  
   # Cross Validation
   
   cross_validation <- rsample::vfold_cv(augmented_set, v = 5, repeats = 10)
@@ -261,10 +275,10 @@ for (i in seq_along(seeds)) {
   CI_MRE <- confidence_interval(performance_matrix, x = "MRE")
   CI_REmax <- confidence_interval(performance_matrix, x = "REmax")
   
-  # Linear Regression Model
+  # Linear Regression Model TRAINED ON ORIGINAL FOR PREDICITNG THE TESTING SET
   linear_model <- lm(Dose ~ . -Sample_id, data = augmented_set)
   
-  # Random Forest Regression (version with ranger)
+  # Random Forest Regression (version with ranger) TRAINED ON ORIGINAL FOR PREDICITNG THE TESTING SET
   random_forest_model <- ranger::ranger(
     Dose ~ . -Sample_id,
     data = augmented_set,
@@ -274,17 +288,17 @@ for (i in seq_along(seeds)) {
     splitrule = "variance"
   )
   
-  # Polynomial Linear Model
+  # Polynomial Linear Model TRAINED ON ORIGINAL FOR PREDICITNG THE TESTING SET
   wang_poly <- augmented_set %>% 
     dplyr::mutate(across(3:last_col(), ~ .x^2))
   polynomial_model <- lm(Dose ~ . -Sample_id, data = wang_poly)
   
-  # Square Root Linear Model
+  # Square Root Linear Model TRAINED ON ORIGINAL FOR PREDICITNG THE TESTING SET
   wang_root <- augmented_set %>% 
     dplyr::mutate(across(3:last_col(), ~ sqrt(.x)))
   square_root_model <- lm(Dose ~. -Sample_id, data = wang_root)
   
-  # ElasticNet Regression Model
+  # ElasticNet Regression Model TRAINED ON ORIGINAL FOR PREDICITNG THE TESTING SET
   elastic_model <- glmnet::glmnet(
     x = as.matrix(augmented_set[, 3:ncol(augmented_set)]),
     y = augmented_set$Dose,
@@ -312,23 +326,23 @@ for (i in seq_along(seeds)) {
     )
   )
   
-  # Linear model transformations
-  testing_poly <- outside_set %>% 
+  # Linear model transformations TESTING PREDICTIONS
+  testing_poly <- testing_set %>% 
     dplyr::mutate(across(3:last_col(), ~ .x^2))
-  testing_root <- outside_set %>% 
+  testing_root <- testing_set %>% 
     dplyr::mutate(across(3:last_col(), ~ sqrt(.x)))
   
   # Predicting the testing data
   testing_matrix <- data.frame(
-    Dose = outside_set$Dose,
-    Linear = predict(linear_model, newdata = outside_set),
+    Dose = testing_set$Dose,
+    Linear = predict(linear_model, newdata = testing_set),
     Polynomial = predict(polynomial_model, newdata = testing_poly),
     SquareRoot = predict(square_root_model, newdata = testing_root),
     RandomForest = predict(random_forest_model, 
-                           data = outside_set)$predictions,
+                           data = testing_set)$predictions,
     ElasticNet = 
       as.numeric(glmnet::predict.glmnet(elastic_model,
-                                        newx = as.matrix(outside_set[, 3:ncol(outside_set)])))
+                                        newx = as.matrix(testing_set[, 3:ncol(testing_set)])))
   )
   testing_matrix <- testing_matrix %>% 
     dplyr::mutate(across(everything(), ~ ifelse(. > 0, ., 0)))
@@ -400,13 +414,6 @@ CI_MAE <- confidence_interval(model_tested, "MAE")
 CI_R2 <- confidence_interval(model_tested, "R2")
 CI_MRE <- confidence_interval(model_tested, "MRE")
 CI_REmax <- confidence_interval(model_tested, "REmax")
-
-## Paired t-tests ----
-# t.test(not_normalized$ RMSE[2:11], actb_normalized$RMSE[2:11], paired = TRUE)
-# t.test(not_normalized$MAE[2:11], actb_normalized$MAE[2:11], paired = TRUE)
-# t.test(not_normalized$RSquared[2:11], actb_normalized$RSquared[2:11], paired = TRUE)
-# t.test(not_normalized$MRE[2:11], actb_normalized$MRE[2:11], paired = TRUE)
-# t.test(not_normalized$REmax[2:11], actb_normalized$REmax[2:11], paired = TRUE)
 
 ## Seed metrics ----
 metrics <- data.frame(
