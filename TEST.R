@@ -17,7 +17,7 @@ li_human_signature_genes <- c("CDKN1A", "BAX", "MDM2", "XPC", "PCNA", "FDXR",
                               "GDF15", "DDB2", "TNFRSF10B", "PHPT1", "ASTN2", 
                               "RPS27L", "BBC3", "TNFSF4", "POLH", "CCNG1", 
                               "PPM1D", "GADD45A", "ZMAT3", "SESN1", "AEN", 
-                              "TRIAP1")
+                              "TRIAP1") 
 
 li_mouse_signature_genes <- c("Cdkn1a", "Bax", "Mdm2", "Xpc", "Pcna", "Fdxr", 
                               "Gdf15", "Ddb2", "Tnfrsf10b", "Phpt1", "Astn2", 

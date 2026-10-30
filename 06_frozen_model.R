@@ -76,10 +76,12 @@ signature <- wang_mouse_reduced_signature_genes
 size_signature <- length(signature)
 
 ## Data for the real testing ----
+new_set <- as.data.frame(t(mouse_rna_datasets[[3]])) 
+new_set <- new_set %>% dplyr::select(c("Dose", all_of(signature)))
 outside_name <- wang_mouse_datasets[1]
 strsplit(outside_name, "_")[[1]][5]
-complete_name <- "MMU_W11_GSE62623_FZ_V01_COMP.csv"
-summary_name <- "MMU_W11_GSE62623_FZ_V01_SUMM.csv"
+complete_name <- "MMU_W11_GSE105266_FZ_V01_COMP.csv"
+summary_name <- "MMU_W11_GSE105266_FZ_V01_SUMM.csv"
 outside_set <- as.data.frame(t(final_matrices[[outside_name]]))
 outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
 outside_set <- outside_set %>% 
@@ -87,7 +89,7 @@ outside_set <- outside_set %>%
   dplyr::relocate(Dose, .before = 1)
 outside_set <- outside_set %>%
   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
-
+outside_set <- new_set
 ## Read Wang Training Data ----
 wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
 wang_training_data <- as.data.frame(t(wang_training_data))
