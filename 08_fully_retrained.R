@@ -26,12 +26,13 @@ start_time <- Sys.time()
 # } else if (hold_out == 4) {
 #   testing_set <- bind_rows("a" = a, "b" = b, "c" = c)
 # }
-testing_set$Sample_id <- seq_len(nrow(testing_set))
-testing_set <- testing_set %>% relocate(Sample_id, 1)
+# testing_set$Sample_id <- seq_len(nrow(testing_set))
+# testing_set <- testing_set %>% relocate(Sample_id, 1)
 # testing_set$Dose <- full_metadata$dose_Gy[match(rownames(testing_set), full_metadata$sample_ID)]
 # testing_set <- testing_set %>% dplyr::relocate(Dose, .before = 2)
 # 
-# ## Data for the real testing ----
+## Data for the real testing ----
+
 # outside_name <- wang_mouse_datasets[hold_out]
 # gse_number <- regmatches(outside_name, regexpr("GSE[0-9]+", outside_name))
 # gse_number
@@ -41,33 +42,68 @@ testing_set <- testing_set %>% relocate(Sample_id, 1)
 # summary_name
 # outside_set <- as.data.frame(t(final_matrices[[outside_name]]))
 # outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
-# outside_set <- outside_set %>% 
+# outside_set <- outside_set %>%
 #   dplyr::select(c("Dose", all_of(signature))) %>%
 #   dplyr::relocate(Dose, .before = 1) %>%
 #   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
 
+## RNA retraining ----
+n <- 3
+new_set <- as.data.frame(t(mouse_rna_datasets[[n]])) 
+new_set <- new_set %>% dplyr::select(c("Dose", all_of(signature)))
+gse_number <- names(mouse_rna_datasets[n])
+gse_number
+complete_name <- paste0("MMU_W11_", gse_number, "_RT_V01_COMP.csv")
+complete_name
+summary_name  <- paste0("MMU_W11_", gse_number, "_RT_V01_SUMM.csv")
+summary_name
+outside_set <- new_set
 
+## RNA holdout set
+a <- as.data.frame(t(mouse_rna_datasets[[1]])) 
+b <- as.data.frame(t(mouse_rna_datasets[[2]])) 
+c <- as.data.frame(t(mouse_rna_datasets[[3]])) 
+
+a <- a %>% select(c("Dose", all_of(wang_mouse_reduced_signature_genes))) %>%
+  mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
+b <- b %>% select(c("Dose", all_of(wang_mouse_reduced_signature_genes))) %>%
+  mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
+c <- c %>% select(c("Dose", all_of(wang_mouse_reduced_signature_genes))) %>%
+  mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
+
+signature <- wang_mouse_reduced_signature_genes
+
+if (n == 1) {
+  testing_set <- bind_rows("b" = b, "c" = c)
+} else if (n == 2) {
+  testing_set <- bind_rows("a" = a, "c" = c)
+} else if (n == 3) {
+  testing_set <- bind_rows("a" = a, "b" = b)
+} 
+testing_set$Sample_id <- seq_len(nrow(testing_set))
+testing_set <- testing_set %>% relocate(Sample_id, 1)
+testing_set <- testing_set %>% dplyr::relocate(Dose, .before = 2)
 ##############################################################
 
-## Read Wang Training Data ----
-wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
-wang_training_data <- as.data.frame(t(wang_training_data))
-colnames(wang_training_data) <- wang_training_data[1,]
-wang_training_data <- wang_training_data[-1,]
-wang_training_data <- wang_training_data %>% dplyr::select(c("Dose", all_of(signature)))
-wang_training_data <- type.convert(wang_training_data, as.is = TRUE)
-outside_set <- wang_training_data
-## Read Wang Test Data ----
-wang_testing_data <- read.csv("wang_testing_dataset.csv", header = FALSE)
-wang_testing_data <- as.data.frame(t(wang_testing_data))
-colnames(wang_testing_data) <- wang_testing_data[1,]
-wang_testing_data <- wang_testing_data[-1,]
-wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(signature)))
-wang_testing_data <- type.convert(wang_testing_data, as.is = TRUE)
-testing_set <- wang_testing_data
-##############################################################
+# ## Wang data for calibration ----
+# wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
+# wang_training_data <- as.data.frame(t(wang_training_data))
+# colnames(wang_training_data) <- wang_training_data[1,]
+# wang_training_data <- wang_training_data[-1,]
+# wang_training_data <- wang_training_data %>% dplyr::select(c("Dose", all_of(signature)))
+# wang_training_data <- type.convert(wang_training_data, as.is = TRUE)
+# outside_set <- wang_training_data
+# # Test Data 
+# wang_testing_data <- read.csv("wang_testing_dataset.csv", header = FALSE)
+# wang_testing_data <- as.data.frame(t(wang_testing_data))
+# colnames(wang_testing_data) <- wang_testing_data[1,]
+# wang_testing_data <- wang_testing_data[-1,]
+# wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(signature)))
+# wang_testing_data <- type.convert(wang_testing_data, as.is = TRUE)
+# testing_set <- wang_testing_data
+# ##############################################################
 
-seeds <- 1
+seeds <- 1:100
 
 comparison_list <- vector("list", length(seeds))
 names(comparison_list) <- paste0("seed_", seeds)
@@ -75,14 +111,21 @@ seed <- 1
 for (i in seq_along(seeds)) {
   seed <- seeds[i]
   set.seed(seed)
-  # ## Data augmentation ----
-  # outside_set_augmented <- outside_set %>%
-  #   dplyr::group_by(Dose) %>%
-  #   dplyr::mutate(dplyr::across(dplyr::everything(), ~ .x + runif(n = 1, min = -0.1, max = 0.1)*sd(.x))) %>%
-  #   dplyr::ungroup()
-  # 
-  # augmented_set <- rbind(outside_set_augmented, outside_set)
-  # rownames(augmented_set) <- NULL
+  ## Data augmentation ----
+  outside_set_augmented <- outside_set %>%
+    dplyr::group_by(Dose) %>%
+    dplyr::mutate(dplyr::across(
+      dplyr::everything(),
+      ~ {
+        s <- sd(.x, na.rm = TRUE)
+        jitter <- runif(n = 1, min = -0.1, max = 0.1)
+        if (is.na(s) || s == 0) .x + jitter else .x + jitter * s
+      }
+    )) %>%
+    dplyr::ungroup() 
+
+  augmented_set <- rbind(outside_set_augmented, outside_set)
+  rownames(augmented_set) <- NULL
   
   # Add a sample id as a tracker
   augmented_set$Sample_id <- seq_len(nrow(augmented_set))
@@ -403,10 +446,14 @@ rownames(model_tested) <- sub("^seed_", "RS", rownames(model_tested))
 model_tested <- as.data.frame(lapply(model_tested, as.numeric))
 
 ## Descriptive stats ---- 
-mean <- model_tested %>% summarise(across(where(is.numeric), \(x) mean(x)))
-sd <- model_tested %>% summarise(across(where(is.numeric), \(x) sd(x)))
-median <- model_tested %>% summarise(across(where(is.numeric), \(x) median(x)))
-iqr <- model_tested %>% summarise(across(where(is.numeric), \(x) IQR(x)))
+mean <- model_tested %>% slice(-1) %>%
+  summarise(across(where(is.numeric), \(x) mean(x, na.rm = TRUE)))
+sd <- model_tested %>% slice(-1) %>%
+  summarise(across(where(is.numeric), \(x) sd(x, na.rm = TRUE)))
+median <- model_tested %>% slice(-1) %>%
+  summarise(across(where(is.numeric), \(x) median(x, na.rm = TRUE)))
+iqr <- model_tested %>% slice(-1) %>%
+  summarise(across(where(is.numeric), \(x) IQR(x, na.rm = TRUE)))
 
 ## Confidence Intervals ----
 CI_RMSE <- confidence_interval(model_tested, "RMSE")

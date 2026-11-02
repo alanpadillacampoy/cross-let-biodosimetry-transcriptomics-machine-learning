@@ -78,12 +78,12 @@ nosleep_on()
   size_signature <- length(signature)
    
   ## Data for the real testing ----
-  new_set <- as.data.frame(t(mouse_rna_datasets[[1]])) 
+  new_set <- as.data.frame(t(mouse_rna_datasets[[3]])) 
   new_set <- new_set %>% dplyr::select(c("Dose", all_of(signature)))
   outside_name <- wang_mouse_datasets[1]
   strsplit(outside_name, "_")[[1]][5]
-  complete_name <- "MMU_W11_GSE296450_PF_V02_COMP.csv"
-  summary_name <- "MMU_W11_GSE296450_PF_V02_SUMM.csv" 
+  complete_name <- "MMU_W11_GSE105266_PF_V02_COMP.csv"
+  summary_name <- "MMU_W11_GSE105266_PF_V02_SUMM.csv" 
   outside_set <- as.data.frame(t(final_matrices[[outside_name]]))
   outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
   outside_set <- outside_set %>% 

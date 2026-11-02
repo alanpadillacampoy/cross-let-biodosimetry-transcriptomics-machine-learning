@@ -58,7 +58,7 @@ gene_space_human <- purrr::reduce(human_signature_list, union)
 gene_space_mouse <- purrr::reduce(mouse_signture_list, union)
 gene_space_total <- union(gene_space_human, gene_space_mouse)
 
-signature <- wang_mouse_signature_genes
+signature <- wang_mouse_reduced_signature_genes
 size_signature <- length(signature)
 
 full_metadata <- read.csv("full_metadata.csv")
