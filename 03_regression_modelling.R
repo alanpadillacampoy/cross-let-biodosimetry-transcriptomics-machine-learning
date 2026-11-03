@@ -71,7 +71,7 @@ gene_space_human <- reduce(human_signature_list, union)
 gene_space_mouse <- reduce(mouse_signture_list, union)
 gene_space_total <- union(gene_space_human, gene_space_mouse)
 
-signature <- wang_mouse_signature_genes
+signature <- li_mouse_signature_genes
 size_signature <- length(signature)
 ## Read Wang Training Data ----
 wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
@@ -97,8 +97,8 @@ wang_testing_data <- type.convert(wang_testing_data, as.is = TRUE)
 #   dplyr::mutate(across(2:last_col(), ~.x/(Actb/100))) %>%
 #   select(-Actb)
 # 
-wang_training_data <- wang_training_data %>% select(-Actb)
-wang_testing_data <- wang_testing_data %>% select(-Actb)
+# wang_training_data <- wang_training_data %>% select(-Actb)
+# wang_testing_data <- wang_testing_data %>% select(-Actb)
 
 seeds <- 1:100
 
