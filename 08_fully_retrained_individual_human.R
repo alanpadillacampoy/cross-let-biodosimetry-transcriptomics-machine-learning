@@ -49,28 +49,24 @@ start_time <- Sys.time()
 
 set.seed(1)
 ## GSE124612 Microarray retraining test
-outside_set_name <- wang_mouse_datasets[1]
-new_set <- as.data.frame(t(final_matrices[[outside_set_name]]))
+signature <- li_human_signature_genes
+new_set <- as.data.frame(t(neutron_set_5))
 split <- initial_split(new_set, prop = 0.7)
 outside_set <- training(split)
-outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
 outside_set <- outside_set %>%
   dplyr::select(c("Dose", all_of(signature))) %>%
-  dplyr::relocate(Dose, .before = 1) %>%
   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
 outside_set$Sample_id <- seq_len(nrow(outside_set))
 outside_set <- outside_set %>% relocate(Sample_id, 1)
 outside_set <- outside_set %>% dplyr::relocate(Dose, .before = 2)
 testing_set  <- testing(split)
-testing_set$Dose <- full_metadata$dose_Gy[match(rownames(testing_set), full_metadata$sample_ID)]
 testing_set <- testing_set %>%
   dplyr::select(c("Dose", all_of(signature))) %>%
-  dplyr::relocate(Dose, .before = 1) %>%
   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
 testing_set$Sample_id <- seq_len(nrow(testing_set))
 testing_set <- testing_set %>% relocate(Sample_id, 1)
 testing_set <- testing_set %>% dplyr::relocate(Dose, .before = 2)
-gse_number <- "GSE124612"
+gse_number <- "GSE308422"
 complete_name <- paste0("MMU_W11_", gse_number, "_RT_V02_COMP.csv")
 complete_name
 summary_name  <- paste0("MMU_W11_", gse_number, "_RT_V02_SUMM.csv")
@@ -117,7 +113,7 @@ seeds <- 1:100
 
 comparison_list <- vector("list", length(seeds))
 names(comparison_list) <- paste0("seed_", seeds)
-seed <- 1
+
 for (i in seq_along(seeds)) {
   seed <- seeds[i]
   set.seed(seed)
@@ -516,3 +512,4 @@ write.csv(metrics, summary_name, row.names = FALSE)
 end_time <- Sys.time()
 print(end_time - start_time)
 beep(3)
+metrics

@@ -44,6 +44,7 @@ zhao_human_signature_genes <- c("DDB2", "CD8A", "TALDO1", "PCNA", "EIF4G2",
 zhao_mouse_signature_genes <- c("Ddb2", "Cd8a", "Taldo1", "Pcna", "Eif4g2", 
                                 "Lcn2", "Cdkn1a", "Prkch", "Eno1", "Ppm1d")
 
+mini_mouse_signature <- c("Fdxr", "Ddb2", "Gadd45a")
 FDXR_human <- "FDXR"
 FDXR_mouse <- "Fdxr"
 DDB2_human <- "DDB2"
@@ -78,7 +79,8 @@ wang_training_data <- read.csv("wang_training_dataset.csv", header = FALSE)
 wang_training_data <- as.data.frame(t(wang_training_data))
 colnames(wang_training_data) <- wang_training_data[1,]
 wang_training_data <- wang_training_data[-1,]
-wang_training_data <- wang_training_data %>% dplyr::select(c("Dose", all_of(signature)))
+wang_training_data <- wang_training_data %>% 
+  dplyr::select(c("Dose", all_of(signature)))
 wang_training_data <- type.convert(wang_training_data, as.is = TRUE)
 
 ## Read Wang Test Data ----
@@ -86,7 +88,8 @@ wang_testing_data <- read.csv("wang_testing_dataset.csv", header = FALSE)
 wang_testing_data <- as.data.frame(t(wang_testing_data))
 colnames(wang_testing_data) <- wang_testing_data[1,]
 wang_testing_data <- wang_testing_data[-1,]
-wang_testing_data <- wang_testing_data %>% dplyr::select(c("Dose", all_of(signature)))
+wang_testing_data <- wang_testing_data %>% 
+  dplyr::select(c("Dose", all_of(signature)))
 wang_testing_data <- type.convert(wang_testing_data, as.is = TRUE)
 
 ## Normalization (invert comments for unnormalized data) ----
@@ -120,7 +123,7 @@ for (i in seq_along(seeds)) {
     )) %>% 
     relocate(Target, 1) %>%
     dplyr::group_by(Target) %>%
-    dplyr::mutate(across(-Dose, ~ .x + runif(n = 1, min = -0.1, max = 0.1)*sd(.x))) %>%
+    dplyr::mutate(across(-Dose, ~ .x + runif(n = 1, min = -0.1, max = 0.1) * sd(.x))) %>%
     dplyr::ungroup()
   
   wang_training_data_augmented$Target <- NULL
@@ -175,8 +178,9 @@ for (i in seq_along(seeds)) {
     )
     
     # ElasticNet Regression Model
+    training_folds_dummy <- training_folds %>% mutate(dummy = 0)
     elastic_model <- glmnet::glmnet(
-      x = as.matrix(training_folds[, 3:ncol(training_folds)]),
+      x = as.matrix(training_folds_dummy[, 3:ncol(training_folds_dummy)]),
       y = training_folds$Dose,
       alpha = 0.5,
       lambda = 1.0,
@@ -194,7 +198,7 @@ for (i in seq_along(seeds)) {
                              data = training_folds)$predictions,
       ElasticNet = 
         as.numeric(glmnet::predict.glmnet(elastic_model,
-                                          newx = as.matrix(training_folds[, 3:ncol(training_folds)])))
+                                          newx = as.matrix(training_folds_dummy[, 3:ncol(training_folds_dummy)])))
     )
     
     catboost_matrix <- catboost_matrix %>% 
@@ -218,6 +222,7 @@ for (i in seq_along(seeds)) {
     )
     
     # Predict testing_folds with the base trained on training_folds
+    testing_folds_dummy <- testing_folds %>% mutate(dummy = 0)
     testing_matrix <- data.frame(
       Sample_id = testing_folds$Sample_id,
       Dose = testing_folds$Dose,
@@ -228,7 +233,7 @@ for (i in seq_along(seeds)) {
                              data = testing_folds)$predictions,
       ElasticNet = 
         as.numeric(glmnet::predict.glmnet(elastic_model,
-                                          newx = as.matrix(testing_folds[, 3:ncol(testing_folds)])))
+                                          newx = as.matrix(testing_folds_dummy[, 3:ncol(testing_folds_dummy)])))
     )
     
     testing_matrix <- testing_matrix %>% 
@@ -343,8 +348,9 @@ for (i in seq_along(seeds)) {
   square_root_model <- lm(Dose ~. -Sample_id, data = wang_root)
   
   # ElasticNet Regression Model
+  augmented_set_dummy <- augmented_set %>% mutate(dummy = 0)
   elastic_model <- glmnet::glmnet(
-    x = as.matrix(augmented_set[, 3:ncol(augmented_set)]),
+    x = as.matrix(augmented_set_dummy[, 3:ncol(augmented_set_dummy)]),
     y = augmented_set$Dose,
     alpha = 0.5,
     lambda = 1.0,
@@ -377,6 +383,7 @@ for (i in seq_along(seeds)) {
     dplyr::mutate(across(3:last_col(), ~ sqrt(.x)))
   
   # Predicting the testing data
+  wang_testing_data_dummy <- wang_testing_data %>% mutate(dummy = 0)
   testing_matrix <- data.frame(
     Dose = wang_testing_data$Dose,
     Linear = predict(linear_model, newdata = wang_testing_data),
@@ -386,7 +393,7 @@ for (i in seq_along(seeds)) {
                            data = wang_testing_data)$predictions,
     ElasticNet = 
       as.numeric(glmnet::predict.glmnet(elastic_model,
-                                        newx = as.matrix(wang_testing_data[, 3:ncol(wang_testing_data)])))
+                                        newx = as.matrix(wang_testing_data_dummy[, 3:ncol(wang_testing_data_dummy)])))
   )
   print(testing_matrix)
   testing_matrix <- testing_matrix %>% 

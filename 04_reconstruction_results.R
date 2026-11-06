@@ -60,5 +60,5 @@ t_test_MAE
 t_test_R2
 t_test_MRE
 t_test_REmax
-beep(10)
+beep(1)
 
