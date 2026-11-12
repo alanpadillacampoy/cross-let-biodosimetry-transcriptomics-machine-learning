@@ -8,6 +8,8 @@ library(BiocManager)
 library(GEOquery)
 library(tibble)
 library(WGCNA)
+library(KEGGREST)
+library(org.Hs.eg.db)
 
 #Functions
 source("00_functions.R")
@@ -45,6 +47,29 @@ zhao_human_signature_genes <- c("DDB2", "CD8A", "TALDO1", "PCNA", "EIF4G2",
 
 zhao_mouse_signature_genes <- c("Ddb2", "Cd8a", "Taldo1", "Pcna", "Eif4g2", 
                                 "Lcn2", "Cdkn1a", "Prkch", "Eno1", "Ppm1d")
+basavaraj_human_signature <- c("ACER2", "AEN", "APOBEC3H", "ASCC3", "ASTN2", 
+                                "BAX", "BBC3", "CCNG1", "CD70", "DCP1B", "DDB2", 
+                                "DRAM1", "EDA2R", "FAS", "FBXO22", "FDXR", 
+                                "FILIP1", "GADD45A", "HIST1H2BG", "IER5", 
+                                "LIG1", "MARCHF10", "MDM2", "MYC", "NDUFAF6", 
+                                "NRG4", "OR52N4", "PANK1", "PAPPA", "PCNA", 
+                                "PHLDA3", "PHPT1", "POLH", "PPM1D", "PTCH2", 
+                                "RPS19", "RPS27L", "SESN1", "SPATA18", "TIGAR", 
+                                "TMEM30A", "TNFRSF10B", "TNFRSF10D", "TNFSF4", 
+                                "TNFSF8", "TRIAP1", "TRIM22", "XPC", "ZMAT3", 
+                                "ZNF79")
+#Neutron modifiers
+neutron_human_modifier <- c("VWCE", "PHLDA3")
+
+links <- keggLink("hsa", "path:hsa03010")
+entrez <- sub("hsa:", "", links)
+
+ribosome_human_genes <- AnnotationDbi::mapIds(org.Hs.eg.db,
+                                        keys = entrez,
+                                        column = "SYMBOL",
+                                        keytype = "ENTREZID")
+ribosome_human_genes <- unique(unname(ribosome_human_genes))
+
 
 FDXR_human <- "FDXR"
 FDXR_mouse <- "Fdxr"
@@ -59,7 +84,9 @@ human_signature_list <- list(
   zhao_human = zhao_human_signature_genes,
   FDXR_human = FDXR_human,
   DDB2_human = DDB2_human,
-  GADD45A_human = GADD45A_human
+  GADD45A_human = GADD45A_human,
+  neutron = neutron_human_modifier,
+  ribosome = ribosome_human_genes
 )
 mouse_signture_list <- list(
   wang_mouse = wang_mouse_reduced_signature_genes,

@@ -3,8 +3,8 @@
 raw_signature_performance_summary <- read.csv("100_seeds_original_performance_summary.csv")
 reduced_signature_performance_summary <- read.csv("100_seeds_reduced_performance_summary.csv")
 normalized_signature_performance_summary <- read.csv("100_seeds_normalized_performance_summary.csv")
-raw_signature_performance <- read.csv("100_seeds_original_performance.csv")
-reduced_signature_performance <- read.csv("100_seeds_reduced_performance.csv")
+raw_signature_performance <- read.csv("000_no_time.csv")
+reduced_signature_performance <- read.csv("000_time.csv")
 normalized_signature_performance <- read.csv("100_seeds_normalized_performance.csv")
 ## Paired t-tests ----
 # Normalized vs non-normalized ----

@@ -1,3 +1,4 @@
+model_performance <- read.csv("0_RT_GSE23515_zhao_time.csv")
 ## Results from the reconstruction ----
 model_tested <- as.data.frame(t(model_performance))
 colnames(model_tested) <- as.character(model_tested[1,])
@@ -6,10 +7,10 @@ rownames(model_tested) <- sub("^seed_", "RS", rownames(model_tested))
 model_tested <- as.data.frame(lapply(model_tested, as.numeric))
 
 ## Descriptive stats ---- 
-mean <- model_tested %>% summarise(across(where(is.numeric), \(x) mean(x)))
-sd <- model_tested %>% summarise(across(where(is.numeric), \(x) sd(x)))
-median <- model_tested %>% summarise(across(where(is.numeric), \(x) median(x)))
-iqr <- model_tested %>% summarise(across(where(is.numeric), \(x) IQR(x)))
+mean <- model_tested %>% summarise(across(where(is.numeric), \(x) mean(x, na.rm = TRUE)))
+sd <- model_tested %>% summarise(across(where(is.numeric), \(x) sd(x, na.rm = TRUE)))
+median <- model_tested %>% summarise(across(where(is.numeric), \(x) median(x, na.rm = TRUE)))
+iqr <- model_tested %>% summarise(across(where(is.numeric), \(x) IQR(x, na.rm = TRUE)))
 
 ## Confidence Intervals ----
 CI_RMSE <- confidence_interval(model_tested, "RMSE")
@@ -62,3 +63,4 @@ t_test_MRE
 t_test_REmax
 beep(1)
 
+metrics

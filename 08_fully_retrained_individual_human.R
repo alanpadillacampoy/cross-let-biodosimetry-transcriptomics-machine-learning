@@ -49,19 +49,19 @@ start_time <- Sys.time()
 
 set.seed(1)
 ## GSE124612 Microarray retraining test
-signature <- li_human_signature_genes
-new_set <- as.data.frame(t(neutron_set_5))
+signature <- basavaraj_human_signature
+new_set <- as.data.frame(t(neutron_set_2))
 split <- initial_split(new_set, prop = 0.7)
 outside_set <- training(split)
 outside_set <- outside_set %>%
-  dplyr::select(c("Dose", all_of(signature))) %>%
+  dplyr::select(c("Dose", any_of(signature))) %>%
   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
 outside_set$Sample_id <- seq_len(nrow(outside_set))
 outside_set <- outside_set %>% relocate(Sample_id, 1)
 outside_set <- outside_set %>% dplyr::relocate(Dose, .before = 2)
 testing_set  <- testing(split)
 testing_set <- testing_set %>%
-  dplyr::select(c("Dose", all_of(signature))) %>%
+  dplyr::select(c("Dose", any_of(signature))) %>%
   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
 testing_set$Sample_id <- seq_len(nrow(testing_set))
 testing_set <- testing_set %>% relocate(Sample_id, 1)

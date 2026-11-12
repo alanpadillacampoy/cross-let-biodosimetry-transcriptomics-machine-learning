@@ -49,12 +49,13 @@ start_time <- Sys.time()
 
 set.seed(1)
 ## GSE124612 Microarray retraining test
-signature <- wang_mouse_reduced_signature_genes
-outside_set_name <- wang_mouse_datasets[1]
+signature <- zhao_human_signature_genes
+outside_set_name <- wang_human_datasets[4]
 new_set <- as.data.frame(t(final_matrices[[outside_set_name]]))
 split <- initial_split(new_set, prop = 0.7)
 outside_set <- training(split)
 outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
+outside_set$Time <- full_metadata$time_hours[match(rownames(outside_set), full_metadata$sample_ID)]
 outside_set <- outside_set %>%
   dplyr::select(c("Dose", all_of(signature))) %>%
   dplyr::relocate(Dose, .before = 1) %>%
@@ -64,6 +65,7 @@ outside_set <- outside_set %>% relocate(Sample_id, 1)
 outside_set <- outside_set %>% dplyr::relocate(Dose, .before = 2)
 testing_set  <- testing(split)
 testing_set$Dose <- full_metadata$dose_Gy[match(rownames(testing_set), full_metadata$sample_ID)]
+testing_set$Time <- full_metadata$time_hours[match(rownames(testing_set), full_metadata$sample_ID)]
 testing_set <- testing_set %>%
   dplyr::select(c("Dose", all_of(signature))) %>%
   dplyr::relocate(Dose, .before = 1) %>%
@@ -76,8 +78,7 @@ complete_name <- paste0("MMU_W11_", gse_number, "_RT_V02_COMP.csv")
 complete_name
 summary_name  <- paste0("MMU_W11_", gse_number, "_RT_V02_SUMM.csv")
 summary_name 
-outside_set$Time <- full_metadata$time_hours[match(rownames(outside_set), full_metadata$sample_ID)]
-a <- outside_set %>% mutate(Time = Time/1440) 
+
 # ## RNA retraining ----
 # n <- 1
 # new_set <- as.data.frame(t(mouse_rna_datasets[[n]])) 
@@ -457,38 +458,8 @@ model_tested <- model_tested[-1:-2,]
 rownames(model_tested) <- sub("^seed_", "RS", rownames(model_tested))
 model_tested <- as.data.frame(lapply(model_tested, as.numeric))
 
-## Descriptive stats ---- 
-mean <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) mean(x, na.rm = TRUE)))
-sd <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) sd(x, na.rm = TRUE)))
-median <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) median(x, na.rm = TRUE)))
-iqr <- model_tested %>% slice(-1) %>%
-  summarise(across(where(is.numeric), \(x) IQR(x, na.rm = TRUE)))
-
-## Confidence Intervals ----
-CI_RMSE <- confidence_interval(model_tested, "RMSE")
-CI_MAE <- confidence_interval(model_tested, "MAE")
-CI_R2 <- confidence_interval(model_tested, "R2")
-CI_MRE <- confidence_interval(model_tested, "MRE")
-CI_REmax <- confidence_interval(model_tested, "REmax")
-
-## Seed metrics ----
-metrics <- data.frame(
-  Metric = c("RMSE", "MAE", "R2", "MRE", "REmax"),
-  Original = c(0.97, 0.785, 0.949, 11.138, 28.687),
-  Mean = c(mean$RMSE, mean$MAE, mean$R2, mean$MRE, mean$REmax),
-  SD = c(sd$RMSE, sd$MAE, sd$R2, sd$MRE, sd$REmax),
-  Median = c(median$RMSE, median$MAE, median$R2, median$MRE, median$REmax),
-  CI_lower = c(CI_RMSE[1], CI_MAE[1], CI_R2[1], CI_MRE[1], CI_REmax[1]),
-  CI_upper = c(CI_RMSE[2], CI_MAE[2], CI_R2[2], CI_MRE[2], CI_REmax[2]),
-  IQR = c(iqr$RMSE, iqr$MAE, iqr$R2, iqr$MRE, iqr$REmax)
-)
-metrics <- metrics %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
-
-write.csv(model_performance, complete_name, row.names = FALSE)
-write.csv(metrics, summary_name, row.names = FALSE)
+#write.csv(model_performance, complete_name, row.names = FALSE)
+#write.csv(metrics, summary_name, row.names = FALSE)
 
 
 

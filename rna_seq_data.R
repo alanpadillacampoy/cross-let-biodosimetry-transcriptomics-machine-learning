@@ -104,3 +104,18 @@ neutron_set_6 <- neutron_set_6 %>% rename( Sample = symbol) %>%
   filter(Sample %in% c("Dose", gene_space_human))
 rownames(neutron_set_6) <- neutron_set_6[,1]
 neutron_set_6[,1] <- NULL
+
+#RIBOSOME PATHWAY
+BiocManager::install(c("KEGGREST", "org.Hs.eg.db", "AnnotationDbi"))
+library(KEGGREST)
+library(org.Hs.eg.db)
+
+links <- keggLink("hsa", "path:hsa03010")
+entrez <- sub("hsa:", "", links)
+
+ribosome_genes <- AnnotationDbi::mapIds(org.Hs.eg.db,
+                                        keys = entrez,
+                                        column = "SYMBOL",
+                                        keytype = "ENTREZID")
+ribosome_genes <- unique(unname(ribosome_genes))
+
