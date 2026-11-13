@@ -49,8 +49,8 @@ start_time <- Sys.time()
 
 set.seed(1)
 ## GSE124612 Microarray retraining test
-signature <- zhao_human_signature_genes
-outside_set_name <- wang_human_datasets[4]
+signature <- li_human_signature_genes
+outside_set_name <- wang_human_datasets[6]
 new_set <- as.data.frame(t(final_matrices[[outside_set_name]]))
 split <- initial_split(new_set, prop = 0.7)
 outside_set <- training(split)
@@ -73,8 +73,8 @@ testing_set <- testing_set %>%
 testing_set$Sample_id <- seq_len(nrow(testing_set))
 testing_set <- testing_set %>% relocate(Sample_id, 1)
 testing_set <- testing_set %>% dplyr::relocate(Dose, .before = 2)
-gse_number <- "GSE124612"
-complete_name <- paste0("MMU_W11_", gse_number, "_RT_V02_COMP.csv")
+gse_number <- "GSE63952"
+complete_name <- paste0("0_RT_", gse_number, "_li_time.csv")
 complete_name
 summary_name  <- paste0("MMU_W11_", gse_number, "_RT_V02_SUMM.csv")
 summary_name 
@@ -458,7 +458,7 @@ model_tested <- model_tested[-1:-2,]
 rownames(model_tested) <- sub("^seed_", "RS", rownames(model_tested))
 model_tested <- as.data.frame(lapply(model_tested, as.numeric))
 
-#write.csv(model_performance, complete_name, row.names = FALSE)
+write.csv(model_performance, complete_name, row.names = FALSE)
 #write.csv(metrics, summary_name, row.names = FALSE)
 
 
