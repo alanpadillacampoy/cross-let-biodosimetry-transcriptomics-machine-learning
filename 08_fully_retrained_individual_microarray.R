@@ -50,7 +50,7 @@ start_time <- Sys.time()
 set.seed(1)
 ## GSE124612 Microarray retraining test
 signature <- li_human_signature_genes
-outside_set_name <- wang_human_datasets[6]
+outside_set_name <- wang_human_datasets[1]
 new_set <- as.data.frame(t(final_matrices[[outside_set_name]]))
 split <- initial_split(new_set, prop = 0.7)
 outside_set <- training(split)
@@ -73,9 +73,10 @@ testing_set <- testing_set %>%
 testing_set$Sample_id <- seq_len(nrow(testing_set))
 testing_set <- testing_set %>% relocate(Sample_id, 1)
 testing_set <- testing_set %>% dplyr::relocate(Dose, .before = 2)
-gse_number <- "GSE63952"
-complete_name <- paste0("0_RT_", gse_number, "_li_time.csv")
+gse_number <- "GSE102971"
+complete_name <- paste0("0_RT_", gse_number, "_li.csv")
 complete_name
+rds_name <- paste0("0_RT_", gse_number, "_li.rds")
 summary_name  <- paste0("MMU_W11_", gse_number, "_RT_V02_SUMM.csv")
 summary_name 
 
@@ -120,6 +121,9 @@ seeds <- 1:100
 
 comparison_list <- vector("list", length(seeds))
 names(comparison_list) <- paste0("seed_", seeds)
+
+errors_list <- vector("list", length(seeds))
+names(errors_list) <- paste0("seed_", seeds)
 
 for (i in seq_along(seeds)) {
   seed <- seeds[i]
@@ -390,6 +394,7 @@ for (i in seq_along(seeds)) {
   
   # Predicting the testing data
   testing_matrix <- data.frame(
+    id = 1:nrow(testing_set),
     Dose = testing_set$Dose,
     Linear = predict(linear_model, newdata = testing_set),
     Polynomial = predict(polynomial_model, newdata = testing_poly),
@@ -441,8 +446,13 @@ for (i in seq_along(seeds)) {
     Original_Model = c(wang_RMSE, wang_MAE, wang_RSquared, wang_MRE, wang_REmax))
   
   comparison_list[[i]] <- comparison_table
+  errors_list[[i]] <- testing_matrix
 }
-
+averaged_testing_matrix <- bind_rows(errors_list) %>%
+  group_by(id) %>%
+  summarise(across(everything(), \(x) mean(x, na.rm = TRUE))) %>%
+  ungroup()
+averaged_testing_matrix <- as.data.frame(averaged_testing_matrix)
 model_performance <- cbind(
   comparison_list[[1]],
   lapply(comparison_list[-1], `[[`, 2) %>% 
@@ -460,24 +470,7 @@ model_tested <- as.data.frame(lapply(model_tested, as.numeric))
 
 write.csv(model_performance, complete_name, row.names = FALSE)
 #write.csv(metrics, summary_name, row.names = FALSE)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+saveRDS(averaged_testing_matrix, rds_name)
 
 
 
