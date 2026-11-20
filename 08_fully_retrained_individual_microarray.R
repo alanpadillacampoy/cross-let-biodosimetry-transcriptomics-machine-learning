@@ -49,8 +49,8 @@ start_time <- Sys.time()
 
 set.seed(1)
 ## GSE124612 Microarray retraining test
-signature <- li_human_signature_genes
-outside_set_name <- wang_human_datasets[1]
+signature <- zhao_human_signature_genes
+outside_set_name <- wang_human_datasets[4]
 new_set <- as.data.frame(t(final_matrices[[outside_set_name]]))
 split <- initial_split(new_set, prop = 0.7)
 outside_set <- training(split)
@@ -73,10 +73,10 @@ testing_set <- testing_set %>%
 testing_set$Sample_id <- seq_len(nrow(testing_set))
 testing_set <- testing_set %>% relocate(Sample_id, 1)
 testing_set <- testing_set %>% dplyr::relocate(Dose, .before = 2)
-gse_number <- "GSE102971"
-complete_name <- paste0("0_RT_", gse_number, "_li.csv")
+gse_number <- "GSE23515"
+complete_name <- paste0("0_RT_", gse_number, "_zhao.csv")
 complete_name
-rds_name <- paste0("0_RT_", gse_number, "_li.rds")
+rds_name <- paste0("0_RT_", gse_number, "_zhao.rds")
 summary_name  <- paste0("MMU_W11_", gse_number, "_RT_V02_SUMM.csv")
 summary_name 
 
