@@ -1,4 +1,3 @@
-model_performance <- read.csv("0_RT_GSE23515_zhao_time.csv")
 ## Results from the reconstruction ----
 model_tested <- as.data.frame(t(model_performance))
 colnames(model_tested) <- as.character(model_tested[1,])
