@@ -1,55 +1,6 @@
 start_time <- Sys.time()
-#GENDER TEST 
-
-# a <- as.data.frame(t(final_matrices[[wang_mouse_datasets[1]]]))
-# b <- as.data.frame(t(final_matrices[[wang_mouse_datasets[2]]]))
-# c <- as.data.frame(t(final_matrices[[wang_mouse_datasets[3]]]))
-# d <- as.data.frame(t(final_matrices[[wang_mouse_datasets[4]]]))
-# 
-# a <- a %>% select(all_of(wang_mouse_reduced_signature_genes)) %>%
-#   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
-# b <- b %>% select(all_of(wang_mouse_reduced_signature_genes)) %>%
-#   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
-# c <- c %>% select(all_of(wang_mouse_reduced_signature_genes)) %>%
-#   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
-# d <- d %>% select(all_of(wang_mouse_reduced_signature_genes)) %>%
-#   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
-# 
-# hold_out <- 1
-# signature <- wang_mouse_reduced_signature_genes
-# 
-# if (hold_out == 1) {
-#   testing_set <- bind_rows("b" = b, "c" = c, "d" = d)
-# } else if (hold_out == 2) {
-#   testing_set <- bind_rows("a" = a, "c" = c, "d" = d)
-# } else if (hold_out == 3) {
-#   testing_set <- bind_rows("a" = a, "b" = b, "d" = d)
-# } else if (hold_out == 4) {
-#   testing_set <- bind_rows("a" = a, "b" = b, "c" = c)
-# }
-# testing_set$Sample_id <- seq_len(nrow(testing_set))
-# testing_set <- testing_set %>% relocate(Sample_id, 1)
-# testing_set$Dose <- full_metadata$dose_Gy[match(rownames(testing_set), full_metadata$sample_ID)]
-# testing_set <- testing_set %>% dplyr::relocate(Dose, .before = 2)
-# 
-## Data for the real testing ----
-
-# outside_name <- wang_mouse_datasets[hold_out]
-# gse_number <- regmatches(outside_name, regexpr("GSE[0-9]+", outside_name))
-# gse_number
-# complete_name <- paste0("MMU_W11_", gse_number, "_RT_V01_COMP.csv")
-# complete_name
-# summary_name  <- paste0("MMU_W11_", gse_number, "_RT_V01_SUMM.csv")
-# summary_name
-# outside_set <- as.data.frame(t(final_matrices[[outside_name]]))
-# outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
-# outside_set <- outside_set %>%
-#   dplyr::select(c("Dose", all_of(signature))) %>%
-#   dplyr::relocate(Dose, .before = 1) %>%
-#   mutate(across(where(is.numeric), ~ replace(., is.na(.), mean(., na.rm = TRUE))))
 
 set.seed(1)
-## GSE124612 Microarray retraining test
 
 x <- "zhao"
 
@@ -68,7 +19,7 @@ male_data <- new_set %>% filter(sex == "male") %>% dplyr::select(-sex)
 female_data <- new_set %>% filter(sex == "female") %>% dplyr::select(-sex)
 
 #Training data
-outside_set <- female_data
+outside_set <- male_data
 outside_set$Dose <- full_metadata$dose_Gy[match(rownames(outside_set), full_metadata$sample_ID)]
 outside_set$Time <- full_metadata$time_hours[match(rownames(outside_set), full_metadata$sample_ID)]
 outside_set <- outside_set %>%
@@ -80,7 +31,7 @@ outside_set <- outside_set %>% relocate(Sample_id, 1)
 outside_set <- outside_set %>% dplyr::relocate(Dose, .before = 2)
 
 #Testing data
-testing_set  <- male_data
+testing_set  <- female_data
 testing_set$Dose <- full_metadata$dose_Gy[match(rownames(testing_set), full_metadata$sample_ID)]
 testing_set$Time <- full_metadata$time_hours[match(rownames(testing_set), full_metadata$sample_ID)]
 testing_set <- testing_set %>%
